@@ -12,8 +12,11 @@ LazyData: TRUE
 Imports:
     base64enc,
     checkbaseline,
+    easybayesian,
+    lmtest,
     MatchIt,
-    readr
+    sandwich,
+    texreg
 Suggests:
     testthat
 RoxygenNote: 5.0.1

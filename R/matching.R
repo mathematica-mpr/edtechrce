@@ -26,6 +26,7 @@ matching <- function(
   match_vars = NULL,
   grade_var = NULL) {
 
+  require(base64enc)
   require(checkbaseline)
   require(MatchIt)
 
