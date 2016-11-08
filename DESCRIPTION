@@ -1,0 +1,19 @@
+Package: edtechrce
+Type: Package
+Title: Contains functions to be used in API for edtechrce.org
+Version: 0.1.0
+Author: person("Mason", "DeCamillis", , "mdecamillis@mathematica-mpr.com",
+    c("aut", "cre"))
+Maintainer: Mason DeCamillis <mdecamillis@mathematica-mpr.com>
+Description: This package contains functions to be called from statistical tools
+    on the edtechrce.org website.
+License: GPL-3
+LazyData: TRUE
+Imports:
+    base64enc,
+    checkbaseline,
+    MatchIt,
+    readr
+Suggests:
+    testthat
+RoxygenNote: 5.0.1
