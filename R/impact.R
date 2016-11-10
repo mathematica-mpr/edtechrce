@@ -64,6 +64,10 @@ impact <- function(
 
   else if (!(direction %in% c('increase', 'decrease'))) error_message <- 'Intended direction of the effect must be either "increase" or "decrease".'
 
+  else if (!is.numeric(cutoff)) error_message <- 'Cutoff value must be numeric.'
+
+  else if (!is.numeric(probability) || probability <= 0 || probability >= 100) error_message <- 'Probability must be numeric and between 0 and 100.'
+
   output <- list(
     error_message = error_message
   )
@@ -90,7 +94,7 @@ impact <- function(
     multiple_grades <- n_grades > 1
 
     # Create impact formula
-    impact_formula <- as.formula(sprintf('%S ~ %s', outcome_var, paste(c(treat_var, control_vars), collapse='+')))
+    impact_formula <- as.formula(sprintf('%s ~ %s', outcome_var, paste(c(treat_var, control_vars), collapse='+')))
 
 
     for (grade_i in seq_along(grades)) {
@@ -99,9 +103,9 @@ impact <- function(
       grade_data <- data_by_grade[[grade]]
 
       if (cluster_var == 'no cluster'){
-        bayesian_lm1 <- try(stanlm(impact_formula, data = grade_data, credible = probability))
-      }else{
-        bayesian_lm1 <- try(stanlm(impact_formula, cluster = cluster_var, data = grade_data, credible = probability))
+        bayesian_lm1 <- try(stanlm(impact_formula, data = grade_data, credible = probability / 100))
+      } else {
+        bayesian_lm1 <- try(stanlm(impact_formula, cluster = cluster_var, data = grade_data, credible = probability / 100))
       }
 
       if (multiple_grades) title <- sprintf('Grade %s', grade)
@@ -164,7 +168,7 @@ impact <- function(
         print(posterior)
       dev.off(which = dev.cur())
 
-      model_note <- sprintf("&#42 0 outside the %s credible interval.<br>The log posterior quantifies the combined posterior density of all model parameters.<br>R&#770 is the potential scale reduction factor on split chains (at convergence, R&#770 = 1).<br>N<sub>eff<//sub> is a crude measure of effective sample size.")
+      model_note <- sprintf("&#42 0 outside the %s%% credible interval.<br>The log posterior quantifies the combined posterior density of all model parameters.<br>R&#770 is the potential scale reduction factor on split chains (at convergence, R&#770 = 1).<br>N<sub>eff<//sub> is a crude measure of effective sample size.", probability)
 
       model_name <- sprintf('Point Estimate<br>[%s%% CI]', probability)
 
