@@ -60,8 +60,6 @@ impact <- function(
 
   else if (any(sapply(data[, c(outcome_var, control_vars)], class) == 'character')) error_message <- 'One or more of the outcome and control variables contains text values. Matching variables should only contain numeric values. Please check that the correct matching variables are selected and that the data file contains the correct values. One common issue is including text missing codes in the data. These should be changed to blank or ".".'
 
-  else if (is.null(direction) || is.null(cutoff) || is.null(probability)) error_message <- 'It looks like some required tools were not completed. Please return to the tool list and complete all tools prior to this step. If you have completed all tools but still see this message, contact an administrator.'
-
   else if (!(direction %in% c('increase', 'decrease'))) error_message <- 'Intended direction of the effect must be either "increase" or "decrease".'
 
   else if (!is.numeric(cutoff)) error_message <- 'Cutoff value must be numeric.'
@@ -75,6 +73,11 @@ impact <- function(
   if (is.null(error_message)) {
 
     output$results_by_grade <- list()
+
+    # If any of the arguments that are created in other tools were not specified, assume defaults. That's because users can use this tool outside the context of an evaluation. The impact estimates are still valid, just without context about the user's goals for success.
+    if (is.null(direction))   direction <- 'increase'
+    if (is.null(cutoff))      cutoff <- 0
+    if (is.null(probability)) probability <- 75
 
     # Split data by grade
     if (!is.null(grade_var) && grade_var %in% colnames(data)) {
