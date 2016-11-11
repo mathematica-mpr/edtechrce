@@ -210,6 +210,7 @@ matching <- function(
     output$download_data$`..id..` <- NULL
   }
 
+  output$match_vars <- match_vars
   output$download_file <- sprintf('matching-%s.csv', Sys.Date())
 
   write.csv(output$download_data, output$download_file, row.names = FALSE)
