@@ -60,162 +60,172 @@ matching <- function(
 
     output$results_by_grade <- list()
 
-    # Add id column to data
-    data <- cbind(data, `..id..` = seq_len(nrow(data)))
+    try_status <- try({
 
-    # Clean data
-    model_vars <- intersect(
-      c('..id..', treat_var, grade_var, match_vars),
-      colnames(data))
+      # Add id column to data
+      data <- cbind(data, `..id..` = seq_len(nrow(data)))
 
-    missing_indices <- lapply(data[, model_vars, drop=FALSE], is.na)
-    missing_index   <- Reduce(`|`, missing_indices)
+      # Clean data
+      model_vars <- intersect(
+        c('..id..', treat_var, grade_var, match_vars),
+        colnames(data))
 
-    data <- data[!missing_index, ]
+      missing_indices <- lapply(data[, model_vars, drop=FALSE], is.na)
+      missing_index   <- Reduce(`|`, missing_indices)
 
-    # Split data by grade if grade variable is specified, otherwise fake it.
-    if (!is.null(grade_var) && grade_var %in% colnames(data)) {
-      grade_index <- data[, grade_var]
+      data <- data[!missing_index, ]
+
+      # Split data by grade if grade variable is specified, otherwise fake it.
+      if (!is.null(grade_var) && grade_var %in% colnames(data)) {
+        grade_index <- data[, grade_var]
+      }
+      else {
+        grade_index <- rep('All', nrow(data))
+      }
+
+      data_by_grade <- by(
+        data = data,
+        INDICES = grade_index,
+        FUN = function(x) x)
+
+      # Matching
+      # Loop instead of lapply to enable accurate progress tracking.
+
+      match_formula <- as.formula(sprintf('%s ~ %s', treat_var, paste(match_vars, collapse = '+')))
+
+      grades <- names(data_by_grade)
+
+      for (grade_i in seq_along(grades)) {
+        grade <- grades[grade_i]
+
+        data_grade <- data_by_grade[[grade]]
+
+        # Try first with optimal matching
+        match_result <- matchit(
+          match_formula,
+          data = data_grade,
+          method = 'nearest',
+          ratio = 1)
+
+        # Check for good balance - if it fails, start trying with calipers
+        matched_data <- match.data(match_result)
+
+        baseline_analysis <- CheckBaseline(
+          raw.DF = data_grade,
+          matched.DF = matched_data,
+          treatment = treat_var,
+          variables = match_vars)
+
+        balance_table <- as.data.frame(baseline_analysis$balance.tbl)
+
+        good_balance <- all(abs(balance_table$Standardized.bias[balance_table$Matching == 'Matched']) <= 0.25)
+
+        if (!good_balance) {
+
+          # Keep calipers as integers to avoid decimal comparisons - just divide by 100 when passing to matchit.
+          caliper <- 100
+
+          while (caliper >= 25 && !good_balance) {
+
+            match_result <- matchit(
+              match_formula,
+              data = data_grade,
+              method = 'nearest',
+              caliper = caliper / 100,
+              ratio = 1)
+
+            matched_data <- match.data(match_result)
+
+            baseline_analysis <- CheckBaseline(
+              raw.DF = data_grade,
+              matched.DF = matched_data,
+              treatment = treat_var,
+              variables = match_vars)
+
+            balance_table <- as.data.frame(baseline_analysis$balance.tbl)
+
+            good_balance <- all(abs(balance_table$Standardized.bias[balance_table$Matching == 'Matched']) <= 0.25)
+
+            caliper <- caliper - 25
+          }
+        }
+
+        n_full <- nrow(data_grade)
+        n_matched <- nrow(matched_data)
+
+        n_full_treat <- sum(data_grade[[treat_var]]==1, na.rm=TRUE)
+        n_matched_treat <- sum(matched_data[[treat_var]]==1, na.rm=TRUE)
+
+        std_bias <- abs(balance_table$Standardized.bias)
+
+        unbalanced_index <- std_bias > 0.25 & balance_table$Matching == 'Matched'
+        unbalanced_vars <- as.character(balance_table$Name[unbalanced_index])
+
+        match_var_means <- lapply(
+          matched_data[, match_vars, drop=FALSE],
+          FUN = function(match_var, treat_var) {
+
+            treat_mean <- mean(match_var[treat_var == 1L])
+            comparison_mean <- mean(match_var[treat_var == 0L])
+
+            list(
+              overall = mean(match_var),
+              intervention = treat_mean,
+              comparison = comparison_mean,
+              difference = treat_mean - comparison_mean)
+          },
+          treat_var = matched_data[, treat_var])
+
+        temp_plot <- tempfile()
+        png(temp_plot)
+          print(baseline_analysis$baseline.plot)
+        dev.off(which = dev.cur())
+
+        plot_encoded <- base64enc::base64encode(temp_plot)
+
+        title <- ifelse(length(grades) > 1,
+          sprintf('Grade %s', grade),
+          '')
+
+        output$results_by_grade[[grade]] <- list(
+          dropped_treatment_obs = n_full_treat - n_matched_treat,
+          good_balance = good_balance,
+          grade = grade,
+          match_var_means = match_var_means,
+          plot = plot_encoded,
+          samples = list(
+            n_full = n_full,
+            n_matched = n_matched,
+            n_full_treat = n_full_treat,
+            n_matched_treat = n_matched_treat),
+          title = title,
+          unbalanced_vars = unbalanced_vars
+        )
+
+        # If good balance was achieved, append the matched data to the set to be downloaded.
+        if (good_balance) {
+          output$download_data <- rbind(output$download_data, matched_data)
+        }
+
+      }
+
+      # Remove temporary id from download data.
+      output$download_data$`..id..` <- NULL
+    })
+
+    if ('try-error' %in% class(try_status)) {
+      output$error_message <- 'There was a problem producing a matched data set, indicating there may be issues that will require a person to diagnose. Please contact a researcher for help, or contact the administrators of this website.'
     }
     else {
-      grade_index <- rep('All', nrow(data))
+      output$match_vars <- match_vars
+      output$download_file <- sprintf('matching-%s.csv', Sys.Date())
+
+      write.csv(output$download_data, output$download_file, row.names = FALSE)
+
+      output$download_data <- NULL
     }
 
-    data_by_grade <- by(
-      data = data,
-      INDICES = grade_index,
-      FUN = function(x) x)
-
-    # Matching
-    # Loop instead of lapply to enable accurate progress tracking.
-
-    match_formula <- as.formula(sprintf('%s ~ %s', treat_var, paste(match_vars, collapse = '+')))
-
-    grades <- names(data_by_grade)
-
-    for (grade_i in seq_along(grades)) {
-      grade <- grades[grade_i]
-
-      data_grade <- data_by_grade[[grade]]
-
-      # Try first with optimal matching
-      match_result <- matchit(
-        match_formula,
-        data = data_grade,
-        method = 'nearest',
-        ratio = 1)
-
-      # Check for good balance - if it fails, start trying with calipers
-      matched_data <- match.data(match_result)
-
-      baseline_analysis <- CheckBaseline(
-        raw.DF = data_grade,
-        matched.DF = matched_data,
-        treatment = treat_var,
-        variables = match_vars)
-
-      balance_table <- as.data.frame(baseline_analysis$balance.tbl)
-
-      good_balance <- all(abs(balance_table$Standardized.bias[balance_table$Matching == 'Matched']) <= 0.25)
-
-      if (!good_balance) {
-
-        # Keep calipers as integers to avoid decimal comparisons - just divide by 100 when passing to matchit.
-        caliper <- 100
-
-        while (caliper >= 25 && !good_balance) {
-
-          match_result <- matchit(
-            match_formula,
-            data = data_grade,
-            method = 'nearest',
-            caliper = caliper / 100,
-            ratio = 1)
-
-          matched_data <- match.data(match_result)
-
-          baseline_analysis <- CheckBaseline(
-            raw.DF = data_grade,
-            matched.DF = matched_data,
-            treatment = treat_var,
-            variables = match_vars)
-
-          balance_table <- as.data.frame(baseline_analysis$balance.tbl)
-
-          good_balance <- all(abs(balance_table$Standardized.bias[balance_table$Matching == 'Matched']) <= 0.25)
-
-          caliper <- caliper - 25
-        }
-      }
-
-      n_full <- nrow(data_grade)
-      n_matched <- nrow(matched_data)
-
-      n_full_treat <- sum(data_grade[[treat_var]]==1, na.rm=TRUE)
-      n_matched_treat <- sum(matched_data[[treat_var]]==1, na.rm=TRUE)
-
-      std_bias <- abs(balance_table$Standardized.bias)
-
-      unbalanced_index <- std_bias > 0.25 & balance_table$Matching == 'Matched'
-      unbalanced_vars <- as.character(balance_table$Name[unbalanced_index])
-
-      match_var_means <- lapply(
-        matched_data[, match_vars, drop=FALSE],
-        FUN = function(match_var, treat_var) {
-
-          treat_mean <- mean(match_var[treat_var == 1L])
-          comparison_mean <- mean(match_var[treat_var == 0L])
-
-          list(
-            overall = mean(match_var),
-            intervention = treat_mean,
-            comparison = comparison_mean,
-            difference = treat_mean - comparison_mean)
-        },
-        treat_var = matched_data[, treat_var])
-
-      temp_plot <- tempfile()
-      png(temp_plot)
-        print(baseline_analysis$baseline.plot)
-      dev.off(which = dev.cur())
-
-      plot_encoded <- base64enc::base64encode(temp_plot)
-
-      title <- ifelse(length(grades) > 1,
-        sprintf('Grade %s', grade),
-        '')
-
-      output$results_by_grade[[grade]] <- list(
-        dropped_treatment_obs = n_full_treat - n_matched_treat,
-        good_balance = good_balance,
-        grade = grade,
-        match_var_means = match_var_means,
-        plot = plot_encoded,
-        samples = list(
-          n_full = n_full,
-          n_matched = n_matched,
-          n_full_treat = n_full_treat,
-          n_matched_treat = n_matched_treat),
-        title = title,
-        unbalanced_vars = unbalanced_vars
-      )
-
-      # If good balance was achieved, append the matched data to the set to be downloaded.
-      if (good_balance) {
-        output$download_data <- rbind(output$download_data, matched_data)
-      }
-    }
-
-    # Remove temporary id from download data.
-    output$download_data$`..id..` <- NULL
   }
-
-  output$match_vars <- match_vars
-  output$download_file <- sprintf('matching-%s.csv', Sys.Date())
-
-  write.csv(output$download_data, output$download_file, row.names = FALSE)
-
-  output$download_data <- NULL
 
   return(output)
 }
