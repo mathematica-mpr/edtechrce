@@ -21,7 +21,7 @@
 #' @importFrom texreg htmlreg
 #' @importFrom utils read.csv write.csv
 impact <- function(
-  data,
+  data = NULL,
   outcome_var = NULL,
   treat_var = NULL,
   control_vars = NULL,
@@ -60,11 +60,11 @@ impact <- function(
 
   else if (any(sapply(data[, c(outcome_var, control_vars)], class) == 'character')) error_message <- 'One or more of the outcome and control variables contains text values. Matching variables should only contain numeric values. Please check that the correct matching variables are selected and that the data file contains the correct values. One common issue is including text missing codes in the data. These should be changed to blank or ".".'
 
-  else if (!(direction %in% c('increase', 'decrease'))) error_message <- 'Intended direction of the effect must be either "increase" or "decrease".'
+  else if (!is.null(direction) && !(direction %in% c('increase', 'decrease'))) error_message <- 'Intended direction of the effect must be either "increase" or "decrease".'
 
-  else if (!is.numeric(cutoff)) error_message <- 'Cutoff value must be numeric.'
+  else if (!is.null(cutoff) && !is.numeric(cutoff)) error_message <- 'Cutoff value must be numeric.'
 
-  else if (!is.numeric(probability) || probability <= 0 || probability >= 100) error_message <- 'Probability must be numeric and between 0 and 100.'
+  else if (!is.null(probability) && (!is.numeric(probability) || probability <= 0 || probability >= 100)) error_message <- 'Probability must be numeric and between 0 and 100.'
 
   output <- list(
     error_message = error_message
@@ -105,10 +105,10 @@ impact <- function(
 
       grade_data <- data_by_grade[[grade]]
 
-      if (cluster_var == 'no cluster'){
-        bayesian_lm1 <- try(stanlm(impact_formula, data = grade_data, credible = probability / 100))
-      } else {
+      if (cluster_var %in% colnames(data))){
         bayesian_lm1 <- try(stanlm(impact_formula, cluster = cluster_var, data = grade_data, credible = probability / 100))
+      } else {
+        bayesian_lm1 <- try(stanlm(impact_formula, data = grade_data, credible = probability / 100))
       }
 
       if (multiple_grades) title <- sprintf('Grade %s', grade)
