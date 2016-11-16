@@ -79,122 +79,127 @@ impact <- function(
     if (is.null(cutoff))      cutoff <- 0
     if (is.null(probability)) probability <- 75
 
-    # Split data by grade
-    if (!is.null(grade_var) && grade_var %in% colnames(data)) {
-      grade_index <- data[, grade_var]
-    }
-    else {
-      grade_index <- rep('All', nrow(data))
-    }
+    try_status <- try({
 
-    data_by_grade <- by(
-      data = data,
-      INDICES = grade_index,
-      FUN = function(x) x)
-
-    grades <- names(data_by_grade)
-    n_grades <- length(grades)
-    multiple_grades <- n_grades > 1
-
-    # Create impact formula
-    impact_formula <- as.formula(sprintf('%s ~ %s', outcome_var, paste(c(treat_var, control_vars), collapse='+')))
-
-
-    for (grade_i in seq_along(grades)) {
-      grade <- grades[grade_i]
-
-      grade_data <- data_by_grade[[grade]]
-
-      if (cluster_var %in% colnames(data))){
-        bayesian_lm1 <- try(stanlm(impact_formula, cluster = cluster_var, data = grade_data, credible = probability / 100))
-      } else {
-        bayesian_lm1 <- try(stanlm(impact_formula, data = grade_data, credible = probability / 100))
+      # Split data by grade
+      if (!is.null(grade_var) && grade_var %in% colnames(data)) {
+        grade_index <- data[, grade_var]
+      }
+      else {
+        grade_index <- rep('All', nrow(data))
       }
 
-      if (multiple_grades) title <- sprintf('Grade %s', grade)
-      else title <- 'All grades combined'
+      data_by_grade <- by(
+        data = data,
+        INDICES = grade_index,
+        FUN = function(x) x)
 
-      # Calculate frequentist model as well. Results will go in brief appendix.
-      freq_lm1    <- try(lm(impact_formula, data = grade_data))
+      grades <- names(data_by_grade)
+      n_grades <- length(grades)
+      multiple_grades <- n_grades > 1
 
-      if (!('try-error' %in% class(freq_lm1))) {
-        freq_coef   <- coefficients(summary(freq_lm1))
-        freq_impact <- freq_coef[treat_var, 'Estimate']
+      # Create impact formula
+      impact_formula <- as.formula(sprintf('%s ~ %s', outcome_var, paste(c(treat_var, control_vars), collapse='+')))
 
-        if (cluster_var == 'no cluster') {
-          freq_se     <- freq_coef[treat_var, 'Std. Error']
-          freq_pvalue <- freq_coef[treat_var, 'Pr(>|t|)']
-        }
-        else {
 
-          freq_cluster <- clustered.se(
-            model_result = freq_lm1,
-            data = grade_data,
-            cluster = as.character(cluster_var),
-            Tvar = as.character(treat_var),
-            level = 0.95)
+      for (grade_i in seq_along(grades)) {
+        grade <- grades[grade_i]
 
-          freq_se     <- freq_cluster$standard.errors[treat_var]
-          freq_pvalue <- freq_cluster$p.values[treat_var]
+        grade_data <- data_by_grade[[grade]]
+
+        if (cluster_var %in% colnames(data)) {
+          bayesian_lm1 <- try(stanlm(impact_formula, cluster = cluster_var, data = grade_data, credible = probability / 100))
+        } else {
+          bayesian_lm1 <- try(stanlm(impact_formula, data = grade_data, credible = probability / 100))
         }
 
-        freq_lm1 <- list(
-          outcome = outcome_var,
-          impact= freq_impact,
-          se    = freq_se,
-          pvalue = freq_pvalue)
+        if (multiple_grades) title <- sprintf('Grade %s', grade)
+        else title <- 'All grades combined'
+
+        # Calculate frequentist model as well. Results will go in brief appendix.
+        freq_lm1    <- try(lm(impact_formula, data = grade_data))
+
+        if (!('try-error' %in% class(freq_lm1))) {
+          freq_coef   <- coefficients(summary(freq_lm1))
+          freq_impact <- freq_coef[treat_var, 'Estimate']
+
+          if (cluster_var == 'no cluster') {
+            freq_se     <- freq_coef[treat_var, 'Std. Error']
+            freq_pvalue <- freq_coef[treat_var, 'Pr(>|t|)']
+          }
+          else {
+
+            freq_cluster <- clustered.se(
+              model_result = freq_lm1,
+              data = grade_data,
+              cluster = as.character(cluster_var),
+              Tvar = as.character(treat_var),
+              level = 0.95)
+
+            freq_se     <- freq_cluster$standard.errors[treat_var]
+            freq_pvalue <- freq_cluster$p.values[treat_var]
+          }
+
+          freq_lm1 <- list(
+            outcome = outcome_var,
+            impact= freq_impact,
+            se    = freq_se,
+            pvalue = freq_pvalue)
+        }
+
+        trace <- bayesian_lm1$traceplots
+
+        posterior <- posteriorplot(
+          model = bayesian_lm1,
+          parameter = treat_var,
+          cutoff = cutoff,
+          credibleIntervalWidth = probability / 100,
+          lessthan = (direction == 'decrease'))
+
+        interpretation <- interpret(model = bayesian_lm1,
+                  name = treat_var,
+                  cutoff = cutoff,
+                  credible = probability / 100,
+                  lessthan = (direction == 'decrease'))
+
+        # Save trace and posterior plots to tempfiles, will be written to database and inserted into brief appendix as base64 encoded text.
+        trace_plot <- tempfile()
+        png(trace_plot)
+          print(trace)
+        dev.off(which = dev.cur())
+
+        posterior_plot <- tempfile()
+        png(posterior_plot)
+          print(posterior)
+        dev.off(which = dev.cur())
+
+        model_note <- sprintf("&#42 0 outside the %s%% credible interval.<br>The log posterior quantifies the combined posterior density of all model parameters.<br>R&#770 is the potential scale reduction factor on split chains (at convergence, R&#770 = 1).<br>N<sub>eff<//sub> is a crude measure of effective sample size.", probability)
+
+        model_name <- sprintf('Point Estimate<br>[%s%% CI]', probability)
+
+        regression_table <- htmlreg(bayesian_lm1$tbl,
+                              star.symbol = '&#42',
+                              custom.note = model_note,
+                              custom.columns = list(
+                                `R&#770` = bayesian_lm1$custom.columns$Rhat,
+                                `N<sub>eff<//sub>` = bayesian_lm1$custom.columns$n_eff),
+                              caption = '',
+                              custom.model.names = model_name,
+                              doctype = FALSE)
+
+        output$results_by_grade[[grade]] <- list(
+          grade = grade,
+          freq = freq_lm1,
+          interpretation = interpretation,
+          posterior_plot = base64enc::base64encode(posterior_plot),
+          regression_table = regression_table,
+          title = title,
+          trace_plot = base64enc::base64encode(trace_plot))
       }
+    })
 
-      trace <- bayesian_lm1$traceplots
-
-      posterior <- posteriorplot(
-        model = bayesian_lm1,
-        parameter = treat_var,
-        cutoff = cutoff,
-        credibleIntervalWidth = probability / 100,
-        lessthan = (direction == 'decrease'))
-
-      interpretation <- interpret(model = bayesian_lm1,
-                name = treat_var,
-                cutoff = cutoff,
-                credible = probability / 100,
-                lessthan = (direction == 'decrease'))
-
-      # Save trace and posterior plots to tempfiles, will be written to database and inserted into brief appendix as base64 encoded text.
-      trace_plot <- tempfile()
-      png(trace_plot)
-        print(trace)
-      dev.off(which = dev.cur())
-
-      posterior_plot <- tempfile()
-      png(posterior_plot)
-        print(posterior)
-      dev.off(which = dev.cur())
-
-      model_note <- sprintf("&#42 0 outside the %s%% credible interval.<br>The log posterior quantifies the combined posterior density of all model parameters.<br>R&#770 is the potential scale reduction factor on split chains (at convergence, R&#770 = 1).<br>N<sub>eff<//sub> is a crude measure of effective sample size.", probability)
-
-      model_name <- sprintf('Point Estimate<br>[%s%% CI]', probability)
-
-      regression_table <- htmlreg(bayesian_lm1$tbl,
-                            star.symbol = '&#42',
-                            custom.note = model_note,
-                            custom.columns = list(
-                              `R&#770` = bayesian_lm1$custom.columns$Rhat,
-                              `N<sub>eff<//sub>` = bayesian_lm1$custom.columns$n_eff),
-                            caption = '',
-                            custom.model.names = model_name,
-                            doctype = FALSE)
-
-      output$results_by_grade[[grade]] <- list(
-        grade = grade,
-        freq = freq_lm1,
-        interpretation = interpretation,
-        posterior_plot = base64enc::base64encode(posterior_plot),
-        regression_table = regression_table,
-        title = title,
-        trace_plot = base64enc::base64encode(trace_plot))
-
-
+    if ('try-error' %in% class(try_status)) {
+      output$error_message <- 'There was a problem producing impact results, indicating there may be issues that will require a person to diagnose. Please contact a researcher for help, or contact the administrators of this website.'
     }
   }
 
