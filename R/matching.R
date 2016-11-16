@@ -21,7 +21,7 @@
 #' @importFrom MatchIt matchit match.data
 #' @importFrom checkbaseline CheckBaseline
 matching <- function(
-  data,
+  data = NULL,
   treat_var = NULL,
   match_vars = NULL,
   grade_var = NULL) {
