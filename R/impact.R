@@ -29,7 +29,7 @@ impact <- function(
   grade_var = NULL,
   direction = NULL,
   cutoff    = NULL,
-  probability = NULL)
+  probability = 75)
 {
 
   require(rstan)
@@ -64,8 +64,6 @@ impact <- function(
 
   else if (!is.null(cutoff) && !is.numeric(cutoff)) error_message <- 'Cutoff value must be numeric.'
 
-  else if (!is.null(probability) && (!is.numeric(probability) || probability <= 0 || probability >= 100)) error_message <- 'Probability must be numeric and between 0 and 100.'
-
   output <- list(
     error_message = error_message
   )
@@ -77,7 +75,9 @@ impact <- function(
     # If any of the arguments that are created in other tools were not specified, assume defaults. That's because users can use this tool outside the context of an evaluation. The impact estimates are still valid, just without context about the user's goals for success.
     if (is.null(direction))   direction <- 'increase'
     if (is.null(cutoff))      cutoff <- 0
-    if (is.null(probability)) probability <- 75
+
+    # Based on email from Steve Bates 2016-12-01 at 8:19 AM, we want to set probability to 75 for the credible interval rather than allowing it to be parameterized.
+    if (is.null(probability) || is.na(as.numeric(probability)) || probability != 75) probability <- 75
 
     try_status <- try({
 
