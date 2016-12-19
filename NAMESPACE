@@ -3,6 +3,8 @@
 export(csv_colnames)
 export(impact)
 export(matching)
+export(randomize)
+export(randomize_block)
 importFrom(MatchIt,match.data)
 importFrom(MatchIt,matchit)
 importFrom(checkbaseline,CheckBaseline)

@@ -11,15 +11,15 @@
 #'
 #' @examples
 #'
-#' @importFrom grDevices dev.cur dev.off png
 #' @importFrom utils read.csv write.csv
 #' @importFrom checkbaseline CheckBaseline
-
 randomize <- function(
   data = NULL,
-  block_id = NULL,
+  unit_id = NULL,
   seed = NULL,
-  p = 0.5,
+  intervention_type = NULL, # 'percentage' or 'number'
+  intervention_quantity = NULL,
+  block_id = NULL,
   baseline_vars = NULL)
 {
 
@@ -37,13 +37,25 @@ randomize <- function(
 
   else if (nrow(data) == 0) error_message <- 'The uploaded data file does not have any observations. Please check that the correct file was uploaded.'
 
-  else if (!is.null(block_id) && !(block_id %in% colnames(data))) error_message <- 'The block_id variable was not found in the data. Please check the data file and the specification of the variable.'
+  else if (is.null(unit_id)) error_message <- 'The unit_id variable is required, but was not specified.'
 
-  else if (p <= 0 || p >= 1) error_message <- 'The probability of being selected into the treatment group must be greater than 0 and less than 1.'
+  else if (!(unit_id %in% colnames(data))) error_message <- sprintf('The unit_id variable (%s) was not found in the data. Please check the data file and the specification of the variable.', unit_id)
 
-  else if (!is.null(seed) && !is.numeric(seed)) error_message <- 'Seed must be a number.'
+  else if (any(duplicated(data[, unit_id]))) error_message <- 'The data file should have one row per ID of the unit to be assigned. The uploaded file has duplicated values.'
+
+  else if (!is.null(block_id) && !(block_id %in% colnames(data))) error_message <- sprintf('The block_id variable (%s) was not found in the data. Please check the data file and the specification of the variable.', block_id)
+
+  else if (is.null(intervention_type) || !(intervention_type %in% c('percentage', 'number'))) error_message <- 'Random assignment type was not specified or invalid. Valid values are "percentage" and "number".'
+
+  else if (intervention_type == 'percentage' && (intervention_quantity <= 0 || intervention_quantity >= 100)) error_message <- 'The percentage of records assigned to the intervention group must be greater than 0 and less than 100.'
+
+  else if (intervention_type == 'number' && (intervention_quantity <= 0 || intervention_quantity >= nrow(data))) error_message <- 'The number of records assigned to the intervention group must be greater than 0 and less than the number of total records in the data.'
+
+  else if (!is.null(seed) && !is.numeric(seed)) error_message <- 'Randomization seed must be a number.'
 
   else if (!is.null(baseline_vars) && !all(baseline_vars %in% colnames(data))) error_message <- 'One or more baseline variables specified were not found in the data set. Please check the data file and the specification of the baseline variables.'
+
+  else if ('Treatment' %in% colnames(data)) error_message <- 'The uploaded data file already has a column named "Treatment" - please remove this column and re-upload so the tool can add a Treatment group indicator to the file.'
 
   output <- list(
     error_message = error_message
@@ -52,56 +64,143 @@ randomize <- function(
   if (is.null(error_message)) {
 
     try_status <- try({
-      if (!is.null(seed)) set.seed(seed)
 
-      if (is.null(block_id)) {
-        block_id <- '..block_id..'
-        data[, block_id] <- 1
-      }
+      randomize_success <- FALSE
+      randomize_attempts <- 0
 
-      data <- by(
-        data = data,
-        INDICES = data[, block_id],
-        FUN = function(block_data) {
+      while (!randomize_success && randomize_attempts < 10) {
 
-          block_data$Treatment <- sample(
-            x = c(0, 1),
-            size = nrow(block_data),
-            replace = TRUE,
-            prob = c(p, 1 - p))
+        if (is.null(seed)) seed <- sample.int(1000:9999, size=1)
+        set.seed(seed)
 
-          block_data
+        # Create a dummy block_id if none was specified
+        if (is.null(block_id)) {
+          block_id <- '...block_id...'
+          data[, block_id] <- 1
+          dummy_block_id <- TRUE
         }
-      )
+        else dummy_block_id <- FALSE
 
-      data <- as.data.frame(do.call(rbind, data))
+        results_by_block <- by(
+          data = data,
+          INDICES = data[, block_id],
+          FUN = randomize_block,
+          intervention_type = intervention_type,
+          intervention_quantity = intervention_quantity,
+          baseline_vars = baseline_vars)
 
-      if (!is.null(baseline_vars)) {
+        # Consider randomization a success if all blocks have good_balance == TRUE
+        randomize_success <- all(sapply(results_by_block, `[[`, 'good_balance'))
 
-        baseline_analysis <- CheckBaseline(
-          raw.DF = data,
-          treatment = 'Treatment',
-          variables = baseline_vars)
-
-        temp_plot <- tempfile()
-        png(temp_plot)
-          print(baseline_analysis$baseline.plot)
-        dev.off(which = dev.cur())
-
-        output$plot <- base64enc::base64encode(temp_plot)
+        randomize_attempts <- randomize_attempts + 1
       }
 
+      output$randomize_success <- randomize_success
+      output$randomize_attempts <- randomize_attempts
+      output$randomize_seed <- seed
+
+      # Re-assemble full data from randomized blocks
+      randomized_data <- lapply(results_by_block, `[[`, 'data')
+      randomized_data <- as.data.frame(do.call(rbind, randomized_data))
+
+      # If a dummy block_id was used, remove it
+      if (dummy_block_id) randomized_data[, block_id] <- NULL
+
+      # Remove block-level data from results_by_block
+      output$results_by_block <- lapply(
+        results_by_block,
+        FUN = function(result) {
+          result$data <- NULL
+          result
+        })
     })
 
     if ('try-error' %in% class(try_status)) {
       output$error_message <- 'There was a problem producing random assignments for your data set, indicating there may be issues that will require a person to diagnose. Please contact a researcher for help, or contact the administrators of this website.'
     }
     else {
-      output$download_file <- sprintf('randomize-%s.csv', Sys.Date())
-      write.csv(data, output$download_file, row.names = FALSE)
+      output$download_file <- sprintf('randomize-%s-seed-%s.csv', Sys.Date(), seed)
+      write.csv(randomized_data, output$download_file, row.names = FALSE)
     }
   }
 
   return(output)
 }
 
+
+#' Title
+#'
+#' @param block_data
+#' @param intervention_type
+#' @param intervention_quantity
+#' @param baseline_vars
+#'
+#' @return
+#' @export
+#'
+#' @examples
+#'
+#' @importFrom grDevices dev.cur dev.off png
+#' @importFrom checkbaseline CheckBaseline
+randomize_block <- function(
+  block_data,
+  intervention_type = 'percentage',
+  intervention_quantity = 50,
+  baseline_vars = NULL)
+{
+
+  if (intervention_type == 'percentage') {
+    size <- ceiling((intervention_quantity / 100) * nrow(block_data))
+  }
+  else size <- intervention_quantity
+
+  intervention_index <- sample.int(
+                          n = nrow(block_data),
+                          size = size)
+
+  block_data$Treatment <- 0L
+  block_data$Treatment[intervention_index] <- 1L
+
+  results <- list(
+    data = block_data,
+    good_balance = TRUE, # defaults to TRUE unless overwritten in baseline characteristic check in next step
+    samples = list(
+      n_full = nrow(block_data),
+      n_treat = size))
+
+  if (!is.null(baseline_vars)) {
+
+    baseline_analysis <- CheckBaseline(
+      raw.DF = block_data,
+      treatment = 'Treatment',
+      variables = baseline_vars)
+
+    balance_table <- as.data.frame(baseline_analysis$balance.tbl)
+
+    results$good_balance <- all(abs(balance_table$Standardized.bias) <= 0.25)
+
+    temp_plot <- tempfile()
+    png(temp_plot)
+      print(baseline_analysis$baseline.plot)
+    dev.off(which = dev.cur())
+
+    results$plot <- base64enc::base64encode(temp_plot)
+
+    results$baseline_var_means <- lapply(
+      block_data[, baseline_vars, drop=FALSE],
+      FUN = function(baseline_var, treat_var) {
+
+        treat_mean <- mean(baseline_var[treat_var == 1L])
+        comparison_mean <- mean(baseline_var[treat_var == 0L])
+
+        list(
+          overall = mean(baseline_var),
+          intervention = treat_mean,
+          comparison = comparison_mean,
+          difference = treat_mean - comparison_mean)
+      },
+      treat_var = block_data$Treatment)
+  }
+
+  results
+}
