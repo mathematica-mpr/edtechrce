@@ -4,7 +4,8 @@
 \alias{matching}
 \title{Title}
 \usage{
-matching(data, treat_var = NULL, match_vars = NULL, grade_var = NULL)
+matching(data = NULL, treat_var = NULL, match_vars = NULL,
+  grade_var = NULL)
 }
 \arguments{
 \item{data}{CSV data file input}
