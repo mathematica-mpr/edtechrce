@@ -4,9 +4,9 @@
 \alias{impact}
 \title{Title}
 \usage{
-impact(data, outcome_var = NULL, treat_var = NULL, control_vars = NULL,
-  cluster_var = NULL, grade_var = NULL, direction = NULL, cutoff = NULL,
-  probability = NULL)
+impact(data = NULL, outcome_var = NULL, treat_var = NULL,
+  control_vars = NULL, cluster_var = NULL, grade_var = NULL,
+  direction = NULL, cutoff = NULL, probability = 75)
 }
 \arguments{
 \item{data}{CSV data file input}

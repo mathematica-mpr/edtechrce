@@ -62,7 +62,7 @@ impact <- function(
 
   else if (!is.null(direction) && !(direction %in% c('increase', 'decrease'))) error_message <- 'Intended direction of the effect must be either "increase" or "decrease".'
 
-  else if (!is.null(cutoff) && !is.na(as.numeric(cutoff))) error_message <- 'Cutoff value must be numeric.'
+  else if (!is.null(cutoff) && is.na(as.numeric(cutoff))) error_message <- 'Cutoff value must be numeric.'
 
   output <- list(
     error_message = error_message

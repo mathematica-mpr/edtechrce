@@ -1,6 +1,6 @@
 context("Impact")
 
-test_impact <- matching(
+test_impact <- impact(
   data = matching_by_grade,
   outcome_var = 'post.test',
   treat_var = 'Treatment',
@@ -11,7 +11,7 @@ test_impact <- matching(
   cutoff = 0.5,
   probability = 75)
 
-test_impact_by_grade <- matching(
+test_impact_by_grade <- impact(
   data = matching_by_grade,
   outcome_var = 'post.test',
   treat_var = 'Treatment',
@@ -22,7 +22,7 @@ test_impact_by_grade <- matching(
   cutoff = 0.5,
   probability = 75)
 
-test_impact_no_data <- matching(
+test_impact_no_data <- impact(
   data = NULL,
   outcome_var = 'post.test',
   treat_var = 'Treatment',
@@ -33,7 +33,7 @@ test_impact_no_data <- matching(
   cutoff = 0.5,
   probability = 75)
 
-test_impact_data_0_obs <- matching(
+test_impact_data_0_obs <- impact(
   data = data.frame(x = character(0)),
   outcome_var = 'post.test',
   treat_var = 'Treatment',
@@ -44,7 +44,7 @@ test_impact_data_0_obs <- matching(
   cutoff = 0.5,
   probability = 75)
 
-test_impact_no_treatment <- matching(
+test_impact_no_treatment <- impact(
   data = matching_by_grade,
   outcome_var = 'post.test',
   control_vars = 'pre.test',
@@ -54,7 +54,7 @@ test_impact_no_treatment <- matching(
   cutoff = 0.5,
   probability = 75)
 
-test_impact_no_outcome <- matching(
+test_impact_no_outcome <- impact(
   data = matching_by_grade,
   treat_var = 'Treatment',
   control_vars = 'pre.test',
@@ -64,7 +64,7 @@ test_impact_no_outcome <- matching(
   cutoff = 0.5,
   probability = 75)
 
-test_impact_treatment_continuous <- matching(
+test_impact_treatment_continuous <- impact(
   data = matching_by_grade,
   outcome_var = 'post.test',
   treat_var = 'pre.test',
@@ -75,7 +75,7 @@ test_impact_treatment_continuous <- matching(
   cutoff = 0.5,
   probability = 75)
 
-test_impact_missing_vars <- matching(
+test_impact_missing_vars <- impact(
   data = matching_by_grade,
   outcome_var = 'post.test',
   treat_var = 'fake',
@@ -86,7 +86,7 @@ test_impact_missing_vars <- matching(
   cutoff = 0.5,
   probability = 75)
 
-test_impact_character_control_var <- matching(
+test_impact_character_control_var <- impact(
   data = matching_by_grade,
   outcome_var = 'post.test',
   treat_var = 'Treatment',
