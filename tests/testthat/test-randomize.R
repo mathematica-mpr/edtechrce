@@ -68,6 +68,13 @@ randomize_block_baseline <- randomize(
   block_id = 'schoolid',
   baseline_vars = 'yrs_exp')
 
+randomize_baseline_error <- randomize(
+  data = randomize_data,
+  unit_id = 'tchid',
+  intervention_type = 'percentage',
+  intervention_quantity = 50,
+  baseline_vars = c('schoolid', 'tchid'))
+
 test_that("no error message", {
   expect_null(randomize_results$error_message)
   expect_null(randomize_block$error_message)
@@ -82,6 +89,7 @@ test_that("error_messages are correct", {
   expect_equal(randomize_block_missing$error_message, 'The block_id variable (fake) was not found in the data. Please check the data file and the specification of the variable.')
   expect_equal(randomize_p_error$error_message, 'The percentage of records assigned to the intervention group must be greater than 0 and less than 100.')
   expect_equal(randomize_n_error$error_message, 'The number of records assigned to the intervention group must be greater than 0 and less than the number of total records in the data.')
+  expect_equal(randomize_baseline_error$error_message, 'One or more baseline variables (schoolid, tchid) are in character format in your data. These columns should be formatted as numbers.')
 })
 
 test_that("plot created", {

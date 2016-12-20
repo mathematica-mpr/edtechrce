@@ -55,7 +55,9 @@ randomize <- function(
 
   else if (!is.null(seed) && !is.numeric(seed)) error_message <- 'Randomization seed must be a number.'
 
-  else if (!is.null(baseline_vars) && !all(baseline_vars %in% colnames(data))) error_message <- 'One or more baseline variables specified were not found in the data set. Please check the data file and the specification of the baseline variables.'
+  else if (!is.null(baseline_vars) && !all(baseline_vars %in% colnames(data))) error_message <- sprintf('One or more baseline variables (%s) specified were not found in the data set. Please check the data file and the specification of the baseline variables.', paste(setdiff(baseline_vars, colnames_data), collapse=', '))
+
+  else if (any(sapply(data[, baseline_vars, drop=FALSE], class) == 'character'))  error_message <- sprintf('One or more baseline variables (%s) are in character format in your data. These columns should be formatted as numbers.', paste(baseline_vars[which(sapply(data[, baseline_vars, drop=FALSE], class) == 'character')], collapse=', '))
 
   else if ('Treatment' %in% colnames(data)) error_message <- 'The uploaded data file already has a column named "Treatment" - please remove this column and re-upload so the tool can add a Treatment group indicator to the file.'
 
