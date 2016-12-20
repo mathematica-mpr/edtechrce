@@ -72,6 +72,8 @@ randomize <- function(
       randomize_success <- FALSE
       randomize_attempts <- 0
 
+      intervention_quantity <- as.numeric(intervention_quantity)
+
       while (!randomize_success && randomize_attempts < 10) {
 
         if (is.null(seed)) seed <- sample.int(1000:9999, size=1)
