@@ -41,6 +41,12 @@ randomize_p_error <- randomize(
   intervention_type = 'percentage',
   intervention_quantity = -5)
 
+randomize_p_error_2 <- randomize(
+  data = randomize_data,
+  unit_id = 'tchid',
+  intervention_type = 'percentage',
+  intervention_quantity = 'not a number')
+
 randomize_n_error <- randomize(
   data = randomize_data,
   unit_id = 'tchid',

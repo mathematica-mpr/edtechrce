@@ -43,13 +43,15 @@ randomize <- function(
 
   else if (any(duplicated(data[, unit_id]))) error_message <- 'The data file should have one row per ID of the unit to be assigned. The uploaded file has duplicated values.'
 
-  else if (!is.null(block_id) && !(block_id %in% colnames(data))) error_message <- sprintf('The block_id variable (%s) was not found in the data. Please check the data file and the specification of the variable.', block_id)
+  else if (!is.null(block_id) && block_id != '' && !(block_id %in% colnames(data))) error_message <- sprintf('The block_id variable (%s) was not found in the data. Please check the data file and the specification of the variable.', block_id)
 
   else if (is.null(intervention_type) || !(intervention_type %in% c('percentage', 'number'))) error_message <- 'Random assignment type was not specified or invalid. Valid values are "percentage" and "number".'
 
-  else if (intervention_type == 'percentage' && (intervention_quantity <= 0 || intervention_quantity >= 100)) error_message <- 'The percentage of records assigned to the intervention group must be greater than 0 and less than 100.'
+  else if (is.na(as.numeric(intervention_quantity))) error_message <- sprintf('The percentage or number of observations to be assigned to the treatment group (%s) could not be interpreted as a number.', intervention_quantity)
 
-  else if (intervention_type == 'number' && (intervention_quantity <= 0 || intervention_quantity >= nrow(data))) error_message <- 'The number of records assigned to the intervention group must be greater than 0 and less than the number of total records in the data.'
+  else if (intervention_type == 'percentage' && (as.numeric(intervention_quantity) <= 0 || as.numeric(intervention_quantity) >= 100)) error_message <- 'The percentage of records assigned to the intervention group must be greater than 0 and less than 100.'
+
+  else if (intervention_type == 'number' && (as.numeric(intervention_quantity) <= 0 || intervention_quantity >= nrow(data))) error_message <- 'The number of records assigned to the intervention group must be greater than 0 and less than the number of total records in the data.'
 
   else if (!is.null(seed) && !is.numeric(seed)) error_message <- 'Randomization seed must be a number.'
 

@@ -165,6 +165,15 @@ impact <- function(
                   credible = probability / 100,
                   lessthan = (direction == 'decrease'))
 
+        if (cutoff == 0) interpretation_cutoff_0 <- interpretation
+        else {
+          interpretation_cutoff_0 <- interpret(model = bayesian_lm1,
+                  name = treat_var,
+                  cutoff = 0,
+                  credible = probability / 100,
+                  lessthan = (direction == 'decrease'))
+        }
+
         # Save trace and posterior plots to tempfiles, will be written to database and inserted into brief appendix as base64 encoded text.
         trace_plot <- tempfile()
         png(trace_plot)
@@ -194,6 +203,7 @@ impact <- function(
           grade = grade,
           freq = freq_lm1,
           interpretation = interpretation,
+          interpretation_cutoff_0 = interpretation_cutoff_0,
           posterior_plot = base64enc::base64encode(posterior_plot),
           regression_table = regression_table,
           title = title,
