@@ -17,8 +17,8 @@ randomize <- function(
   data = NULL,
   unit_id = NULL,
   seed = NULL,
-  intervention_type = NULL, # 'percentage' or 'number'
-  intervention_quantity = NULL,
+  intervention_type = 'percentage', # 'percentage' or 'number'
+  intervention_quantity = 50,
   block_id = NULL,
   baseline_vars = NULL)
 {
@@ -41,7 +41,7 @@ randomize <- function(
 
   else if (!(unit_id %in% colnames(data))) error_message <- sprintf('The unit_id variable (%s) was not found in the data. Please check the data file and the specification of the variable.', unit_id)
 
-  else if (any(duplicated(data[, unit_id]))) error_message <- 'The data file should have one row per ID of the unit to be assigned. The uploaded file has duplicated values.'
+  #else if (any(duplicated(data[, unit_id]))) error_message <- 'The data file should have one row per ID of the unit to be assigned. The uploaded file has duplicated values.'
 
   else if (!is.null(block_id) && block_id != '' && !(block_id %in% colnames(data))) error_message <- sprintf('The block_id variable (%s) was not found in the data. Please check the data file and the specification of the variable.', block_id)
 
@@ -91,12 +91,14 @@ randomize <- function(
           data = data,
           INDICES = data[, block_id],
           FUN = randomize_block,
+          unit_id = unit_id,
           intervention_type = intervention_type,
           intervention_quantity = intervention_quantity,
           baseline_vars = baseline_vars)
 
         # Consider randomization a success if all blocks have good_balance == TRUE
-        randomize_success <- all(sapply(results_by_block, `[[`, 'good_balance'))
+        balance_by_block <- sapply(results_by_block, `[[`, 'good_balance')
+        randomize_success <- all(is.na(balance_by_block) | balance_by_block)
 
         randomize_attempts <- randomize_attempts + 1
       }
@@ -140,6 +142,7 @@ randomize <- function(
 #' @param intervention_type
 #' @param intervention_quantity
 #' @param baseline_vars
+#' @param unit_id
 #'
 #' @return
 #' @export
@@ -150,6 +153,7 @@ randomize <- function(
 #' @importFrom checkbaseline CheckBaseline
 randomize_block <- function(
   block_data,
+  unit_id,
   intervention_type = 'percentage',
   intervention_quantity = 50,
   baseline_vars = NULL)
@@ -160,16 +164,23 @@ randomize_block <- function(
   }
   else size <- intervention_quantity
 
+  units <- unique(block_data[, unit_id, drop=FALSE])
+
   intervention_index <- sample.int(
-                          n = nrow(block_data),
+                          n = nrow(units),
                           size = size)
 
-  block_data$Treatment <- 0L
-  block_data$Treatment[intervention_index] <- 1L
+  units$Treatment <- 0L
+  units$Treatment[intervention_index] <- 1L
+
+  block_data <- merge(
+    block_data,
+    units,
+    all.x = TRUE)
 
   results <- list(
     data = block_data,
-    good_balance = TRUE, # defaults to TRUE unless overwritten in baseline characteristic check in next step
+    good_balance = NA,
     samples = list(
       n_full = nrow(block_data),
       n_treat = size))
