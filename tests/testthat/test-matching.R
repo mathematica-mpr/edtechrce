@@ -44,10 +44,18 @@ test_match_character_match_var <- matching(
   treat_var = 'Treatment',
   match_vars = 'anon.student.id')
 
+matching_by_grade$`var with spaces` <- matching_by_grade$Treatment
+matching_by_grade$`1var with leading number` <- matching_by_grade$pre.test
+
+test_match_unusual_colnames <- matching(
+  data = matching_by_grade,
+  treat_var = 'var with spaces',
+  match_vars = '1var with leading number')
 
 test_that("no error message", {
   expect_null(test_match$error_message)
   expect_null(test_match_by_grade$error_message)
+  expect_null(test_match_unusual_colnames$error_message)
 })
 
 test_that("grade treated correctly", {
