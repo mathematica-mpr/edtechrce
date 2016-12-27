@@ -103,7 +103,10 @@ impact <- function(
       multiple_grades <- n_grades > 1
 
       # Create impact formula
-      impact_formula <- as.formula(sprintf('%s ~ %s', outcome_var, paste(c(treat_var, control_vars), collapse='+')))
+      impact_formula <- as.formula(sprintf('`%s` ~ %s',
+                                           outcome_var,
+                                           paste(
+                                             sprintf('`%s`', c(treat_var, control_vars), collapse='+'))))
 
 
       for (grade_i in seq_along(grades)) {
