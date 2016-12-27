@@ -104,7 +104,7 @@ test_that("no error message", {
 
 test_that("grade treated correctly", {
   expect_equal(length(test_impact$results_by_grade), 1)
-  expect_equal(test_impact$results_by_grade[[1]]$title, "")
+  expect_equal(test_impact$results_by_grade[[1]]$title, "All grades combined")
 
   expect_equal(length(test_impact_by_grade$results_by_grade), 6)
   expect_equal(test_impact_by_grade$results_by_grade[[1]]$title, "Grade 1")
@@ -125,7 +125,7 @@ test_that("error_messages are correct", {
 
   expect_equal(test_impact_treatment_continuous$error_message, 'Some values of the treatment variable are not 0 or 1 (or missing). Please check that the correct variable is selected, and that the data file contains the correct value for that variable.')
 
-  expect_equal(test_impact_missing_vars$error_message, 'One or more control variables do not exist in the data file. Check that you did not select the blank line at the top of the matching variable selector.')
+  expect_equal(test_impact_missing_vars$error_message, 'The treatment variable specified (fake) does not exist in the data file. Check the data file and the selected treatment variable.')
 
-  expect_equal(test_match_character_control_var$error_message, 'One or more of the outcome and control variables contains text values. Matching variables should only contain numeric values. Please check that the correct matching variables are selected and that the data file contains the correct values. One common issue is including text missing codes in the data. These should be changed to blank or ".".')
+  expect_equal(test_impact_character_control_var$error_message, 'One or more of the outcome and control variables contains text values. Matching variables should only contain numeric values. Please check that the correct matching variables are selected and that the data file contains the correct values. One common issue is including text missing codes in the data. These should be changed to blank or ".".')
 })

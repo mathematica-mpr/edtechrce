@@ -54,6 +54,8 @@ impact <- function(
 
   else if (is.null(treat_var)) error_message <- 'No treatment variable is selected. Please select the variable that indicates which observations used the app/training.'
 
+  else if (!(treat_var %in% colnames(data))) error_message <- sprintf('The treatment variable specified (%s) does not exist in the data file. Check the data file and the selected treatment variable.')
+
   else if (!all(control_vars %in% colnames(data))) error_message <- 'One or more control variables do not exist in the data file. Check that you did not select the blank line at the top of the matching variable selector.'
 
   else if (!all(data[[treat_var]] %in% c(0, 1, NA))) error_message <- 'Some values of the treatment variable are not 0 or 1 (or missing). Please check that the correct variable is selected, and that the data file contains the correct value for that variable.'
