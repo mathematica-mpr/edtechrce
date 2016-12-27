@@ -65,6 +65,8 @@ matching <- function(
       # Add id column to data
       data <- cbind(data, `..id..` = seq_len(nrow(data)))
 
+      match_vars <- unique(match_vars)
+
       # Clean data
       model_vars <- intersect(
         c('..id..', treat_var, grade_var, match_vars),
@@ -90,8 +92,11 @@ matching <- function(
 
       # Matching
       # Loop instead of lapply to enable accurate progress tracking.
-
-      match_formula <- as.formula(sprintf('%s ~ %s', treat_var, paste(match_vars, collapse = '+')))
+      match_formula <- as.formula(sprintf('`%s` ~ %s',
+                                          treat_var,
+                                          paste(
+                                            sprintf('`%s`', match_vars),
+                                            collapse = '+')))
 
       grades <- names(data_by_grade)
 
@@ -161,7 +166,7 @@ matching <- function(
         unbalanced_index <- std_bias > 0.25 & balance_table$Matching == 'Matched'
         unbalanced_vars <- as.character(balance_table$Name[unbalanced_index])
 
-        match_var_means <- lapply(
+        baseline_var_means <- lapply(
           matched_data[, match_vars, drop=FALSE],
           FUN = function(match_var, treat_var) {
 
@@ -191,7 +196,7 @@ matching <- function(
           dropped_treatment_obs = n_full_treat - n_matched_treat,
           good_balance = good_balance,
           grade = grade,
-          match_var_means = match_var_means,
+          baseline_var_means = baseline_var_means,
           plot = plot_encoded,
           samples = list(
             n_full = n_full,
