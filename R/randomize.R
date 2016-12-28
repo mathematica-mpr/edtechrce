@@ -205,18 +205,30 @@ randomize_block <- function(
 
     results$baseline_var_means <- lapply(
       block_data[, baseline_vars, drop=FALSE],
-      FUN = function(baseline_var, treat_var) {
+      FUN = function(
+        baseline_var,
+        treat_var,
+        unit_id)
+      {
+        unit_level_means <- aggregate(
+          list(var = baseline_var),
+          by = list(unit_id = unit_id, treat_var = treat_var),
+          FUN = mean,
+          na.rm = TRUE)
 
-        treat_mean <- mean(baseline_var[treat_var == 1L])
-        comparison_mean <- mean(baseline_var[treat_var == 0L])
+        treat_index <- unit_level_means$treat_var == 1L
+
+        treat_mean <- mean(unit_level_means$var[treat_index], na.rm=TRUE)
+        comparison_mean <- mean(unit_level_means$var[!treat_index], na.rm=TRUE)
 
         list(
-          overall = mean(baseline_var),
+          overall = mean(unit_level_means$var),
           intervention = treat_mean,
           comparison = comparison_mean,
           difference = treat_mean - comparison_mean)
       },
-      treat_var = block_data$Treatment)
+      treat_var = block_data$Treatment,
+      unit_id = block_data[, unit_id])
   }
 
   results
