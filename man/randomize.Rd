@@ -5,8 +5,8 @@
 \title{Title}
 \usage{
 randomize(data = NULL, unit_id = NULL, seed = NULL,
-  intervention_type = NULL, intervention_quantity = NULL, block_id = NULL,
-  baseline_vars = NULL)
+  intervention_type = "percentage", intervention_quantity = 50,
+  block_id = NULL, baseline_vars = NULL)
 }
 \arguments{
 \item{data}{CSV data file input}
