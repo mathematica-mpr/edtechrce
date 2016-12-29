@@ -70,6 +70,13 @@ test_that("samples sizes are correct", {
   test_match$results_by_grade
 })
 
+test_that("effect sizes are present", {
+  baseline_var_means <- test_match$results_by_grade[[1]]$baseline_var_means
+  effect_sizes <- sapply(baseline_var_means, `[[`, 'effect_size')
+
+  expect_true(is.numeric(effect_sizes) & !is.na(effect_sizes))
+})
+
 
 test_that("error_messages are correct", {
   expect_equal(test_match_no_data$error_message, "The uploaded data could not be parsed as a CSV. Please check the format of the file.")

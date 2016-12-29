@@ -217,15 +217,32 @@ randomize_block <- function(
           na.rm = TRUE)
 
         treat_index <- unit_level_means$treat_var == 1L
+        match_t <- unit_level_means$var[treat_index]
+        match_c <- unit_level_means$var[!treat_index]
 
-        treat_mean <- mean(unit_level_means$var[treat_index], na.rm=TRUE)
-        comparison_mean <- mean(unit_level_means$var[!treat_index], na.rm=TRUE)
+        mean_t <- mean(match_t)
+        mean_c <- mean(match_c)
+
+        n_t <- sum(treat_index)
+        n_c <- sum(!treat_index)
+
+        numerator <- (((n_t - 1) * var(match_t)) + ((n_c - 1) * var(match_c)))
+        denominator <- n_t + n_c - 2
+
+        s2_pooled <- numerator / denominator
+
+        se_d <- sqrt(((n_t + n_c) / (n_t * n_c)) * s2_pooled)
+
+        difference <- mean_t - mean_c
+        effect_size <- difference / se_d
 
         list(
           overall = mean(unit_level_means$var),
-          intervention = treat_mean,
-          comparison = comparison_mean,
-          difference = treat_mean - comparison_mean)
+          intervention = mean_t,
+          comparison = mean_c,
+          difference = difference,
+          effect_size = effect_size)
+
       },
       treat_var = block_data$Treatment,
       unit_id = block_data[, unit_id])

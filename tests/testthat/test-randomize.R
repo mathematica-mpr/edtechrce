@@ -104,9 +104,14 @@ test_that("plot created", {
 test_that("means calculated", {
   expect_is(randomize_baseline$results_by_block$`1`$baseline_var_means, 'list')
   expect_length(randomize_baseline$results_by_block$`1`$baseline_var_means, 1)
-  expect_length(randomize_baseline$results_by_block$`1`$baseline_var_means$yrs_exp, 4)
+  expect_length(randomize_baseline$results_by_block$`1`$baseline_var_means$yrs_exp, 5)
 
   expect_is(randomize_block_baseline$results_by_block$A$baseline_var_means, 'list')
   expect_length(randomize_block_baseline$results_by_block$A$baseline_var_means, 1)
-  expect_length(randomize_block_baseline$results_by_block$A$baseline_var_means$yrs_exp, 4)
+  expect_length(randomize_block_baseline$results_by_block$A$baseline_var_means$yrs_exp, 5)
+})
+
+test_that("effect sizes are present", {
+  expect_is(randomize_baseline$results_by_block$`1`$baseline_var_means$yrs_exp, 'list')
+  expect_true(!is.na(randomize_baseline$results_by_block$`1`$baseline_var_means$yrs_exp$effect_size))
 })
