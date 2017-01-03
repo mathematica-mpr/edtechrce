@@ -123,6 +123,8 @@ randomize <- function(
         })
     })
 
+    output$baseline_vars <- baseline_vars
+
     if ('try-error' %in% class(try_status)) {
       output$error_message <- 'There was a problem producing random assignments for your data set, indicating there may be issues that will require a person to diagnose. Please contact a researcher for help, or contact the administrators of this website.'
     }
