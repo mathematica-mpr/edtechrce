@@ -76,7 +76,7 @@ randomize <- function(
 
       while (!randomize_success && randomize_attempts < 10) {
 
-        if (is.null(seed)) seed <- sample.int(1000:9999, size=1)
+        if (is.null(seed)) seed <- sample.int(1000:99999, size=1)
         set.seed(seed)
 
         # Create a dummy block_id if none was specified
