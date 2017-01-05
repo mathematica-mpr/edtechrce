@@ -87,6 +87,8 @@ randomize <- function(
         }
         else dummy_block_id <- FALSE
 
+        baseline_vars <- unique(baseline_vars)
+
         results_by_block <- by(
           data = data,
           INDICES = data[, block_id],
@@ -184,7 +186,7 @@ randomize_block <- function(
     data = block_data,
     good_balance = NA,
     samples = list(
-      n_full = nrow(block_data),
+      n_full = nrow(units),
       n_treat = size))
 
   if (!is.null(baseline_vars)) {
