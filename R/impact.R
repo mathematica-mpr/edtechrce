@@ -122,6 +122,8 @@ impact <- function(
           bayesian_lm1 <- try(stanlm(impact_formula, data = grade_data, credible = probability / 100))
         }
 
+        impact <- mean(bayesian_lm1$posteriorSamples$posteriorSamplesBeta[[treat_var]], na.rm=TRUE)
+
         if (multiple_grades) title <- sprintf('Grade %s', grade)
         else title <- 'All grades combined'
 
@@ -149,11 +151,26 @@ impact <- function(
             freq_pvalue <- freq_cluster$p.values[treat_var]
           }
 
+          treat_index <- grade_data[[treat_var]] == 1
+          outcome_t <- grade_data[[outcome_var]][treat_index]
+          outcome_c <- grade_data[[outcome_var]][!treat_index]
+
+          n_t <- sum(treat_index)
+          n_c <- sum(!treat_index)
+
+          numerator <- (((n_t - 1) * var(outcome_t)) + ((n_c - 1) * var(outcome_c)))
+          denominator <- n_t + n_c - 2
+
+          s2_pooled <- numerator / denominator
+
+          se_d <- sqrt(((n_t + n_c) / (n_t * n_c)) * s2_pooled)
+
           freq_lm1 <- list(
-            outcome = outcome_var,
-            impact= freq_impact,
-            se    = freq_se,
-            pvalue = freq_pvalue)
+            outcome     = outcome_var,
+            impact      = freq_impact,
+            effect_size = freq_impact / se_d,
+            se          = freq_se,
+            pvalue      = freq_pvalue)
         }
 
         trace <- bayesian_lm1$traceplots
@@ -208,6 +225,7 @@ impact <- function(
         output$results_by_grade[[grade]] <- list(
           grade = grade,
           freq = freq_lm1,
+          impact = impact,
           interpretation = interpretation,
           interpretation_cutoff_0 = interpretation_cutoff_0,
           posterior_plot = base64enc::base64encode(posterior_plot),
