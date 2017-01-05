@@ -235,6 +235,8 @@ impact <- function(
       }
     })
 
+    output$outcome_var <- outcome_var
+
     if ('try-error' %in% class(try_status)) {
       output$error_message <- 'There was a problem producing impact results, indicating there may be issues that will require a person to diagnose. Please contact a researcher for help, or contact the administrators of this website.'
     }
