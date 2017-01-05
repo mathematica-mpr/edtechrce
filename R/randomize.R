@@ -162,13 +162,12 @@ randomize_block <- function(
   intervention_quantity = 50,
   baseline_vars = NULL)
 {
+  units <- unique(block_data[, unit_id, drop=FALSE])
 
   if (intervention_type == 'percentage') {
-    size <- ceiling((intervention_quantity / 100) * nrow(block_data))
+    size <- ceiling((intervention_quantity / 100) * nrow(units))
   }
   else size <- intervention_quantity
-
-  units <- unique(block_data[, unit_id, drop=FALSE])
 
   intervention_index <- sample.int(
                           n = nrow(units),

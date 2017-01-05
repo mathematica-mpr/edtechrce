@@ -75,6 +75,13 @@ randomize_baseline_error <- randomize(
   intervention_quantity = 50,
   baseline_vars = c('schoolid', 'tchid'))
 
+randomize_different_level <- randomize(
+  data = randomize_data,
+  unit_id = 'schoolid',
+  intervention_type = 'percentage',
+  intervention_quantity = 50,
+  baseline_vars = 'yrs_exp')
+
 test_that("no error message", {
   expect_null(randomize_results$error_message)
   expect_null(randomize_block$error_message)
