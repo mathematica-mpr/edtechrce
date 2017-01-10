@@ -161,14 +161,13 @@ impact <- function(
           numerator <- (((n_t - 1) * var(outcome_t)) + ((n_c - 1) * var(outcome_c)))
           denominator <- n_t + n_c - 2
 
-          s2_pooled <- numerator / denominator
-
-          se_d <- sqrt(((n_t + n_c) / (n_t * n_c)) * s2_pooled)
+          s_pooled <- sqrt(numerator / denominator)
+          freq_effect_size <- freq_impact / s_pooled
 
           freq_lm1 <- list(
             outcome     = outcome_var,
             impact      = freq_impact,
-            effect_size = freq_impact / se_d,
+            effect_size = freq_effect_size,
             se          = freq_se,
             pvalue      = freq_pvalue)
         }

@@ -232,12 +232,10 @@ randomize_block <- function(
         numerator <- (((n_t - 1) * var(match_t)) + ((n_c - 1) * var(match_c)))
         denominator <- n_t + n_c - 2
 
-        s2_pooled <- numerator / denominator
-
-        se_d <- sqrt(((n_t + n_c) / (n_t * n_c)) * s2_pooled)
+        s_pooled <- sqrt(numerator / denominator)
 
         difference <- mean_t - mean_c
-        effect_size <- difference / se_d
+        effect_size <- difference / s_pooled
 
         list(
           overall = mean(unit_level_means$var),
