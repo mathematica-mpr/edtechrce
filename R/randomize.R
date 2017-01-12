@@ -62,8 +62,14 @@ randomize <- function(
   else if ('Treatment' %in% colnames(data)) error_message <- 'The uploaded data file already has a column named "Treatment" - please remove this column and re-upload so the tool can add a Treatment group indicator to the file.'
 
   output <- list(
-    error_message = error_message
-  )
+    error_message = error_message,
+    args = list(
+      unit_id = unit_id,
+      seed = seed,
+      intervention_type = intervention_type,
+      intervention_quantity = intervention_quantity,
+      block_id = block_id,
+      baseline_vars = baseline_vars))
 
   if (is.null(error_message)) {
 
@@ -125,7 +131,7 @@ randomize <- function(
         })
     })
 
-    output$baseline_vars <- baseline_vars
+
 
     if ('try-error' %in% class(try_status)) {
       output$error_message <- 'There was a problem producing random assignments for your data set, indicating there may be issues that will require a person to diagnose. Please contact a researcher for help, or contact the administrators of this website.'
@@ -133,6 +139,7 @@ randomize <- function(
     else if (output$randomize_success) {
       output$download_file <- sprintf('randomize-%s-seed-%s.csv', Sys.Date(), seed)
       write.csv(randomized_data, output$download_file, row.names = FALSE)
+      output$download_file <- NULL
     }
   }
 

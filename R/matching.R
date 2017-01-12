@@ -53,8 +53,11 @@ matching <- function(
   else if (any(sapply(data[, match_vars], class) == 'character')) error_message <- 'One or more matching variables contains text values. Matching variables should only contain numeric values. Please check that the correct matching variables are selected and that the data file contains the correct values. One common issue is including text missing codes in the data. These should be changed to blank or ".".'
 
   output <- list(
-    error_message = error_message
-  )
+    error_message = error_message,
+    args = list(
+      treat_var = treat_var,
+      match_vars = match_vars,
+      grade_var = grade_var))
 
   if (is.null(error_message)) {
 
@@ -238,11 +241,8 @@ matching <- function(
       output$error_message <- 'There was a problem producing a matched data set, indicating there may be issues that will require a person to diagnose. Please contact a researcher for help, or contact the administrators of this website.'
     }
     else {
-      output$match_vars <- match_vars
       output$download_file <- sprintf('matching-%s.csv', Sys.Date())
-
       write.csv(output$download_data, output$download_file, row.names = FALSE)
-
       output$download_data <- NULL
     }
 

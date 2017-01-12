@@ -67,8 +67,16 @@ impact <- function(
   else if (!is.null(cutoff) && is.na(as.numeric(cutoff))) error_message <- 'Cutoff value must be numeric.'
 
   output <- list(
-    error_message = error_message
-  )
+    error_message = error_message,
+    args = list(
+      outcome_var = outcome_var,
+      treat_var = treat_var,
+      control_vars = control_vars,
+      cluster_var = cluster_var,
+      grade_var = grade_var,
+      direction = direction,
+      cutoff    = cutoff,
+      probability = probability))
 
   if (is.null(error_message)) {
 
