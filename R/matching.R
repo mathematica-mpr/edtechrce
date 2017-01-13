@@ -108,6 +108,13 @@ matching <- function(
 
         data_grade <- data_by_grade[[grade]]
 
+        n_t <- sum(data_grade[[treat_var]] == 1)
+        n_c <- sum(data_grade[[treat_var]] == 0)
+
+        # From Ignacio, if we have more treatment than comparison obs,
+        # reverse treatment indicator before matching and re-set afterwards.
+        if (n_t > n_c) data_grade[[treat_var]] <- 1 - data_grade[[treat_var]]
+
         # Try first with optimal matching
         match_result <- matchit(
           match_formula,
@@ -117,6 +124,12 @@ matching <- function(
 
         # Check for good balance - if it fails, start trying with calipers
         matched_data <- match.data(match_result)
+
+        # If treatment groups were swapped, switch back before checking balance
+        if (n_t > n_c) {
+          data_grade[[treat_var]]   <- 1 - data_grade[[treat_var]]
+          matched_data[[treat_var]] <- 1 - matched_data[[treat_var]]
+        }
 
         baseline_analysis <- CheckBaseline(
           raw.DF = data_grade,
@@ -135,6 +148,10 @@ matching <- function(
 
           while (caliper >= 25 && !good_balance) {
 
+            # Repeat treatment group swap if necessary, since the original swap
+            # was undone for the initial balance check
+            if (n_t > n_c) data_grade[[treat_var]] <- 1 - data_grade[[treat_var]]
+
             match_result <- matchit(
               match_formula,
               data = data_grade,
@@ -143,6 +160,12 @@ matching <- function(
               ratio = 1)
 
             matched_data <- match.data(match_result)
+
+            # If treatment groups were swapped, switch back before checking balance
+            if (n_t > n_c) {
+              data_grade[[treat_var]]   <- 1 - data_grade[[treat_var]]
+              matched_data[[treat_var]] <- 1 - matched_data[[treat_var]]
+            }
 
             baseline_analysis <- CheckBaseline(
               raw.DF = data_grade,
@@ -161,7 +184,7 @@ matching <- function(
         n_full <- nrow(data_grade)
         n_matched <- nrow(matched_data)
 
-        n_full_treat <- sum(data_grade[[treat_var]]==1, na.rm=TRUE)
+        n_full_treat <- n_t
         n_matched_treat <- sum(matched_data[[treat_var]]==1, na.rm=TRUE)
 
         std_bias <- abs(balance_table$Standardized.bias)
