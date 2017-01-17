@@ -80,7 +80,11 @@ randomize <- function(
 
       intervention_quantity <- as.numeric(intervention_quantity)
 
-      while (!randomize_success && randomize_attempts < 10) {
+      # Try randomizing for up to 3 minutes
+      randomize_timeout <- FALSE
+      time_limit <- Sys.time() + 180
+
+      while (!randomize_success && !randomize_timeout) {
 
         if (is.null(seed)) seed <- sample.int(1000:99999, size=1)
         set.seed(seed)
@@ -109,6 +113,7 @@ randomize <- function(
         randomize_success <- all(is.na(balance_by_block) | balance_by_block)
 
         randomize_attempts <- randomize_attempts + 1
+        randomize_timeout <- Sys.time() > time_limit
       }
 
       output$randomize_success <- randomize_success
