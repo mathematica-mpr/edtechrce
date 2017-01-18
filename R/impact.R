@@ -17,9 +17,11 @@
 #'
 #' @importFrom easybayesian interpret posteriorplot stanlm
 #' @importFrom grDevices dev.cur dev.off png
-#' @importFrom stats as.formula coefficients lm
+#' @importFrom stats as.formula coefficients lm var
 #' @importFrom texreg htmlreg
 #' @importFrom utils read.csv write.csv
+#' @importFrom jsonlite toJSON
+#' @importFrom methods is
 impact <- function(
   data = NULL,
   outcome_var = NULL,
@@ -248,6 +250,11 @@ impact <- function(
       output$error_message <- 'There was a problem producing impact results, indicating there may be issues that will require a person to diagnose. Please contact a researcher for help, or contact the administrators of this website.'
     }
   }
+
+  # Be sure output can be converted to JSON by jsonlite
+  json_test <- try(toJSON(output))
+
+  if (is(json_test, 'try-error')) output <- list(error_message = 'There was a problem converting output to JSON format.')
 
   return(output)
 }

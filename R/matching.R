@@ -16,10 +16,12 @@
 #' grade_var = 'grade')
 #'
 #' @importFrom grDevices dev.cur dev.off png
-#' @importFrom stats as.formula
+#' @importFrom stats as.formula aggregate var
 #' @importFrom utils read.csv write.csv
 #' @importFrom MatchIt matchit match.data
 #' @importFrom checkbaseline CheckBaseline
+#' @importFrom jsonlite toJSON
+#' @importFrom methods is
 matching <- function(
   data = NULL,
   treat_var = NULL,
@@ -270,6 +272,11 @@ matching <- function(
     }
 
   }
+
+  # Be sure output can be converted to JSON by jsonlite
+  json_test <- try(toJSON(output))
+
+  if (is(json_test, 'try-error')) output <- list(error_message = 'There was a problem converting output to JSON format.')
 
   return(output)
 }

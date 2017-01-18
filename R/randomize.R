@@ -13,6 +13,8 @@
 #'
 #' @importFrom utils read.csv write.csv
 #' @importFrom checkbaseline CheckBaseline
+#' @importFrom jsonlite toJSON
+#' @importFrom methods is
 randomize <- function(
   data = NULL,
   unit_id = NULL,
@@ -55,7 +57,7 @@ randomize <- function(
 
   else if (!is.null(seed) && !is.numeric(seed)) error_message <- 'Randomization seed must be a number.'
 
-  else if (!is.null(baseline_vars) && !all(baseline_vars %in% colnames(data))) error_message <- sprintf('One or more baseline variables (%s) specified were not found in the data set. Please check the data file and the specification of the baseline variables.', paste(setdiff(baseline_vars, colnames_data), collapse=', '))
+  else if (!is.null(baseline_vars) && !all(baseline_vars %in% colnames(data))) error_message <- sprintf('One or more baseline variables (%s) specified were not found in the data set. Please check the data file and the specification of the baseline variables.', paste(setdiff(baseline_vars, colnames(data)), collapse=', '))
 
   else if (any(sapply(data[, baseline_vars, drop=FALSE], class) == 'character'))  error_message <- sprintf('One or more baseline variables (%s) are in character format in your data. These columns should be formatted as numbers.', paste(baseline_vars[which(sapply(data[, baseline_vars, drop=FALSE], class) == 'character')], collapse=', '))
 
@@ -139,8 +141,6 @@ randomize <- function(
         })
     })
 
-
-
     if ('try-error' %in% class(try_status)) {
       output$error_message <- 'There was a problem producing random assignments for your data set, indicating there may be issues that will require a person to diagnose. Please contact a researcher for help, or contact the administrators of this website.'
     }
@@ -150,6 +150,11 @@ randomize <- function(
       output$download_file <- NULL
     }
   }
+
+  # Be sure output can be converted to JSON by jsonlite
+  json_test <- try(toJSON(output))
+
+  if (is(json_test, 'try-error')) output <- list(error_message = 'There was a problem converting output to JSON format.')
 
   return(output)
 }
@@ -170,6 +175,7 @@ randomize <- function(
 #'
 #' @importFrom grDevices dev.cur dev.off png
 #' @importFrom checkbaseline CheckBaseline
+#' @importFrom stats aggregate var
 randomize_block <- function(
   block_data,
   unit_id,

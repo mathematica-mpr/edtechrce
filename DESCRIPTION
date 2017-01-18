@@ -13,8 +13,10 @@ Imports:
     base64enc,
     checkbaseline,
     easybayesian,
+    jsonlite,
     lmtest,
     MatchIt,
+    methods,
     sandwich,
     texreg
 Suggests:
