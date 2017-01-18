@@ -120,7 +120,7 @@ randomize <- function(
       output$randomize_success  <- randomize_success
       output$randomize_attempts <- randomize_attempts
       output$randomize_timeout  <- randomize_timeout
-      output$randomize_time     <- Sys.time() - start_time
+      output$randomize_time     <- as.integer(Sys.time() - start_time)
       output$randomize_seed     <- seed
 
       # Re-assemble full data from randomized blocks
