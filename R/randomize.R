@@ -80,9 +80,10 @@ randomize <- function(
 
       intervention_quantity <- as.numeric(intervention_quantity)
 
-      # Try randomizing for up to 3 minutes
+      # Try randomizing for up to 1 minute
       randomize_timeout <- FALSE
-      time_limit <- Sys.time() + 180
+      start_time <- Sys.time()
+      time_limit <- start_time + 60
 
       while (!randomize_success && !randomize_timeout) {
 
@@ -116,9 +117,11 @@ randomize <- function(
         randomize_timeout <- Sys.time() > time_limit
       }
 
-      output$randomize_success <- randomize_success
+      output$randomize_success  <- randomize_success
       output$randomize_attempts <- randomize_attempts
-      output$randomize_seed <- seed
+      output$randomize_timeout  <- randomize_timeout
+      output$randomize_time     <- Sys.time() - start_time
+      output$randomize_seed     <- seed
 
       # Re-assemble full data from randomized blocks
       randomized_data <- lapply(results_by_block, `[[`, 'data')
