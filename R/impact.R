@@ -118,7 +118,7 @@ impact <- function(
       impact_formula <- as.formula(sprintf('`%s` ~ %s',
                                            outcome_var,
                                            paste(
-                                             sprintf('`%s`', c(treat_var, control_vars), collapse='+'))))
+                                             sprintf('`%s`', c(treat_var, control_vars)), collapse='+')))
 
 
       for (grade_i in seq_along(grades)) {
