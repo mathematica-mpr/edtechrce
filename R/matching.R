@@ -32,6 +32,8 @@ matching <- function(
   require(checkbaseline)
   require(MatchIt)
 
+  data_file <- data
+
   # Try to read data
   if (!('data.frame' %in% class(data))) {
     data <- try(read.csv(data, header=TRUE, stringsAsFactors=FALSE))
@@ -272,6 +274,9 @@ matching <- function(
     }
 
   }
+
+  # Remove data file
+  if (is.character(data_file) && file.exists(data_file)) file.remove(data_file)
 
   # Be sure output can be converted to JSON by jsonlite
   json_test <- try(toJSON(output))

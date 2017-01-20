@@ -40,6 +40,8 @@ impact <- function(
   require(sandwich)
   require(lmtest)
 
+  data_file <- data
+
   # Try to read data
   if (!('data.frame' %in% class(data))) {
     data <- try(read.csv(data, header=TRUE, stringsAsFactors=FALSE))
@@ -250,6 +252,9 @@ impact <- function(
       output$error_message <- 'There was a problem producing impact results, indicating there may be issues that will require a person to diagnose. Please contact a researcher for help, or contact the administrators of this website.'
     }
   }
+
+  # Remove data file
+  if (is.character(data_file) && file.exists(data_file)) file.remove(data_file)
 
   # Be sure output can be converted to JSON by jsonlite
   json_test <- try(toJSON(output))
