@@ -146,12 +146,7 @@ impact <- function(
           freq_coef   <- coefficients(summary(freq_lm1))
           freq_impact <- freq_coef[treat_var, 'Estimate']
 
-          if (cluster_var == 'no cluster') {
-            freq_se     <- freq_coef[treat_var, 'Std. Error']
-            freq_pvalue <- freq_coef[treat_var, 'Pr(>|t|)']
-          }
-          else {
-
+          if (cluster_var %in% colnames(data)) {
             freq_cluster <- clustered.se(
               model_result = freq_lm1,
               data = grade_data,
@@ -161,6 +156,10 @@ impact <- function(
 
             freq_se     <- freq_cluster$standard.errors[treat_var]
             freq_pvalue <- freq_cluster$p.values[treat_var]
+          }
+          else {
+            freq_se     <- freq_coef[treat_var, 'Std. Error']
+            freq_pvalue <- freq_coef[treat_var, 'Pr(>|t|)']
           }
 
           treat_index <- grade_data[[treat_var]] == 1
