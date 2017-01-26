@@ -128,7 +128,7 @@ impact <- function(
 
         grade_data <- data_by_grade[[grade]]
 
-        if (cluster_var %in% colnames(data)) {
+        if (!is.null(cluster_var) && cluster_var %in% colnames(data)) {
           bayesian_lm1 <- try(stanlm(impact_formula, cluster = cluster_var, data = grade_data, credible = probability / 100))
         } else {
           bayesian_lm1 <- try(stanlm(impact_formula, data = grade_data, credible = probability / 100))
@@ -146,7 +146,7 @@ impact <- function(
           freq_coef   <- coefficients(summary(freq_lm1))
           freq_impact <- freq_coef[treat_var, 'Estimate']
 
-          if (cluster_var %in% colnames(data)) {
+          if (!is.null(cluster_var) && cluster_var %in% colnames(data)) {
             freq_cluster <- clustered.se(
               model_result = freq_lm1,
               data = grade_data,
