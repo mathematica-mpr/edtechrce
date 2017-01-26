@@ -143,7 +143,14 @@ matching <- function(
 
         balance_table <- as.data.frame(baseline_analysis$balance.tbl)
 
-        good_balance <- all(abs(balance_table$Standardized.bias[balance_table$Matching == 'Matched']) <= 0.25)
+        bias <- balance_table$Standardized.bias[balance_table$Matching == 'Matched']
+
+        na_bias <- is.na(bias)
+
+        if (any(na_bias)) dropped_vars <- match_vars[na_bias]
+        else dropped_vars <- character(0)
+
+        good_balance <- all(abs(bias) <= 0.25 || is.na(bias)) && !all(na_bias)
 
         if (!good_balance) {
 
@@ -179,7 +186,14 @@ matching <- function(
 
             balance_table <- as.data.frame(baseline_analysis$balance.tbl)
 
-            good_balance <- all(abs(balance_table$Standardized.bias[balance_table$Matching == 'Matched']) <= 0.25)
+            bias <- balance_table$Standardized.bias[balance_table$Matching == 'Matched']
+
+            na_bias <- is.na(bias)
+
+            if (any(na_bias)) dropped_vars <- match_vars[na_bias]
+            else dropped_vars <- character(0)
+
+            good_balance <- all(abs(bias) <= 0.25 || is.na(bias)) && !all(na_bias)
 
             caliper <- caliper - 25
           }
@@ -193,11 +207,13 @@ matching <- function(
 
         std_bias <- abs(balance_table$Standardized.bias)
 
-        unbalanced_index <- std_bias > 0.25 & balance_table$Matching == 'Matched'
+        unbalanced_index <- std_bias > 0.25 & !is.na(std_bias) & balance_table$Matching == 'Matched'
         unbalanced_vars <- as.character(balance_table$Name[unbalanced_index])
 
+        baseline_vars <- setdiff(match_vars, dropped_vars)
+
         baseline_var_means <- lapply(
-          matched_data[, match_vars, drop=FALSE],
+          matched_data[, baseline_vars, drop=FALSE],
           FUN = function(match_var, treat_var) {
 
             treat_index <- treat_var == 1L
@@ -240,6 +256,7 @@ matching <- function(
 
         output$results_by_grade[[grade]] <- list(
           dropped_treatment_obs = n_full_treat - n_matched_treat,
+          dropped_vars = dropped_vars,
           good_balance = good_balance,
           grade = grade,
           baseline_var_means = baseline_var_means,
