@@ -156,8 +156,8 @@ impact <- function(
 
             freq_se     <- freq_cluster$standard.errors[treat_var]
             freq_pvalue <- freq_cluster$p.values[treat_var]
-            freq_lb     <- freq_cluster$lb[treat_var]
-            freq_ub     <- freq_cluster$ub[treat_var]
+            freq_lb     <- freq_cluster$lb
+            freq_ub     <- freq_cluster$ub
           }
           else {
             freq_se     <- freq_coef[treat_var, 'Std. Error']
