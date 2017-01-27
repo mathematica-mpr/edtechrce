@@ -31,12 +31,9 @@ clustered.se <- function(model_result, data, cluster, level = 0.95, Tvar = "trea
     if (any(na_coeff))
         coeff <- coeff[!na_coeff]
 
-    lb <- ub <- numeric(length(level))
-    for (i in 1:length(level)) {
-        a <- 1 - (1 - level[i])/2
-        lb[i] <- coeff[[Tvar]] - qt(p = a, df = df) * standard.errors[[Tvar]]
-        ub[i] <- coeff[[Tvar]] + qt(p = a, df = df) * standard.errors[[Tvar]]
-    }
+    alpha <- 1 - (1 - level) / 2
+    lb <- coeff[[Tvar]] - qt(p = alpha, df = df) * standard.errors[[Tvar]]
+    ub <- coeff[[Tvar]] + qt(p = alpha, df = df) * standard.errors[[Tvar]]
 
     clustered.se <- list(vcovCL = vcovCL, standard.errors = standard.errors, p.values = p.values, lb = lb, ub = ub)
     return(clustered.se)
