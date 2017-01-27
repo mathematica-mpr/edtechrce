@@ -156,10 +156,16 @@ impact <- function(
 
             freq_se     <- freq_cluster$standard.errors[treat_var]
             freq_pvalue <- freq_cluster$p.values[treat_var]
+            freq_lb     <- freq_cluster$lb
+            freq_ub     <- freq_cluster$ub
           }
           else {
             freq_se     <- freq_coef[treat_var, 'Std. Error']
             freq_pvalue <- freq_coef[treat_var, 'Pr(>|t|)']
+
+            ci_width <- qt(p = 0.05, df = freq_lm1$df.residual) * standard.errors[[Tvar]]
+            freq_lb  <- freq_impact - ci_width
+            freq_ub  <- freq_impact + ci_width
           }
 
           treat_index <- grade_data[[treat_var]] == 1
@@ -180,7 +186,9 @@ impact <- function(
             impact      = freq_impact,
             effect_size = freq_effect_size,
             se          = freq_se,
-            pvalue      = freq_pvalue)
+            pvalue      = freq_pvalue,
+            lb          = freq_lb,
+            ub          = freq_ub)
         }
 
         trace <- bayesian_lm1$traceplots
