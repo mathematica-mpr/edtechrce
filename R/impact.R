@@ -163,7 +163,7 @@ impact <- function(
             freq_se     <- freq_coef[treat_var, 'Std. Error']
             freq_pvalue <- freq_coef[treat_var, 'Pr(>|t|)']
 
-            ci_width <- qt(p = 0.05, df = freq_lm1$df.residual) * freq_se
+            ci_width <- qt(p = 0.975, df = freq_lm1$df.residual) * freq_se
             freq_lb  <- freq_impact - ci_width
             freq_ub  <- freq_impact + ci_width
           }
