@@ -17,7 +17,8 @@
 #'
 #' @importFrom easybayesian interpret posteriorplot stanlm
 #' @importFrom grDevices dev.cur dev.off png
-#' @importFrom stats as.formula coefficients lm var
+#' @importFrom stats as.formula coefficients lm var confint anova
+#' @importFrom lme4 lmer fixef
 #' @importFrom texreg htmlreg
 #' @importFrom utils read.csv write.csv
 #' @importFrom jsonlite toJSON
@@ -37,8 +38,8 @@ impact <- function(
   require(rstan)
   require(easybayesian)
   require(base64enc)
-  require(sandwich)
-  require(lmtest)
+  require(lme4)
+  require(car)
 
   data_file <- data
 
@@ -117,22 +118,59 @@ impact <- function(
       multiple_grades <- n_grades > 1
 
       # Create impact formula
-      impact_formula <- as.formula(sprintf('`%s` ~ %s',
-                                           outcome_var,
-                                           paste(
-                                             sprintf('`%s`', c(treat_var, control_vars)), collapse='+')))
+      impact_formula_string <- sprintf('`%s` ~ %s',
+                                       outcome_var,
+                                       paste(
+                                         sprintf('`%s`', c(treat_var, control_vars)), collapse='+'))
 
+      impact_formula <- as.formula(impact_formula_string)
+
+      impact_clustered <- !is.null(cluster_var) && cluster_var %in% colnames(data)
+
+      if (impact_clustered) {
+        impact_formula_clustered <- as.formula(
+          sprintf('%s + (1 | %s)', impact_formula_string, cluster_var))
+      }
 
       for (grade_i in seq_along(grades)) {
         grade <- grades[grade_i]
 
         grade_data <- data_by_grade[[grade]]
 
-        if (!is.null(cluster_var) && cluster_var %in% colnames(data)) {
-          bayesian_lm1 <- try(stanlm(impact_formula, cluster = cluster_var, data = grade_data, credible = probability / 100))
+        if (impact_clustered) {
+
+          bayesian_lm1 <- stanlm(impact_formula, cluster = cluster_var, data = grade_data, credible = probability / 100)
+
         } else {
-          bayesian_lm1 <- try(stanlm(impact_formula, data = grade_data, credible = probability / 100))
+
+          bayesian_lm1 <- stanlm(impact_formula, data = grade_data, credible = probability / 100)
+
         }
+
+        # Check for divergent transitions warning, if present, re-run with adjusted parameters
+        warning_messages <- names(warnings())
+        divergent_transitions <- grepl('[0-9]+ divergent transitions', warning_messages)
+
+        if (divergent_transitions) {
+
+          message('Divergent transitions detected, running with adjust iter and adapt_delta')
+
+          if (impact_clustered) {
+
+            bayesian_lm1 <- stanlm(impact_formula, cluster = cluster_var, data = grade_data, credible = probability / 100, iter = 10000, adapt_delta = 0.9999)
+
+          } else {
+
+            bayesian_lm1 <- stanlm(impact_formula, data = grade_data, credible = probability / 100, iter = 10000, adapt_delta = 0.9999)
+
+          }
+        }
+
+        # Check again for divergent transitions warning, if present, stop with an error message
+        warning_messages <- names(warnings())
+        divergent_transitions <- grepl('[0-9]+ divergent transitions', warning_messages)
+
+        if (divergent_transitions) stop('Divergent transitions detected with iter = 10000 and adapt_delta = 0.9999.')
 
         impact <- mean(bayesian_lm1$posteriorSamples$posteriorSamplesBeta[[treat_var]], na.rm=TRUE)
 
@@ -140,26 +178,27 @@ impact <- function(
         else title <- 'All grades combined'
 
         # Calculate frequentist model as well. Results will go in brief appendix.
-        freq_lm1    <- try(lm(impact_formula, data = grade_data))
+        freq_try <- try({
+          if (impact_clustered) {
 
-        if (!('try-error' %in% class(freq_lm1))) {
-          freq_coef   <- coefficients(summary(freq_lm1))
-          freq_impact <- freq_coef[treat_var, 'Estimate']
+            freq_lmer1 <- lmer(impact_formula_clustered, data = grade_data)
 
-          if (!is.null(cluster_var) && cluster_var %in% colnames(data)) {
-            freq_cluster <- clustered.se(
-              model_result = freq_lm1,
-              data = grade_data,
-              cluster = as.character(cluster_var),
-              Tvar = as.character(treat_var),
-              level = 0.95)
+            # extract the point esitmate
+            freq_impact <- fixef(freq_lmer1)[treat_var]
 
-            freq_se     <- freq_cluster$standard.errors[treat_var]
-            freq_pvalue <- freq_cluster$p.values[treat_var]
-            freq_lb     <- freq_cluster$lb
-            freq_ub     <- freq_cluster$ub
+            freq_se     <- summary(freq_lmer1)$coef[treat_var, 'Std. Error']
+            freq_pvalue <- car::Anova(freq_lmer1)[treat_var, 'Pr(>Chisq)']
+
+            # compute the confidence interval
+            freq_ci <- confint(freq_lmer1, treat_var)
+            freq_lb <- freq_ci[1]
+            freq_ub <- freq_ci[2]
           }
           else {
+            freq_lm1    <- lm(impact_formula, data = grade_data)
+            freq_coef   <- coefficients(summary(freq_lm1))
+            freq_impact <- freq_coef[treat_var, 'Estimate']
+
             freq_se     <- freq_coef[treat_var, 'Std. Error']
             freq_pvalue <- freq_coef[treat_var, 'Pr(>|t|)']
 
@@ -181,7 +220,7 @@ impact <- function(
           s_pooled <- sqrt(numerator / denominator)
           freq_effect_size <- freq_impact / s_pooled
 
-          freq_lm1 <- list(
+          freq_results <- list(
             outcome     = outcome_var,
             impact      = freq_impact,
             effect_size = freq_effect_size,
@@ -189,6 +228,18 @@ impact <- function(
             pvalue      = freq_pvalue,
             lb          = freq_lb,
             ub          = freq_ub)
+        })
+
+        if (is(freq_try, 'try-error')) {
+          freq_results <- list(
+            outcome     = outcome_var,
+            impact      = NA,
+            effect_size = NA,
+            se          = NA,
+            pvalue      = NA,
+            lb          = NA,
+            ub          = NA)
+
         }
 
         trace <- bayesian_lm1$traceplots
