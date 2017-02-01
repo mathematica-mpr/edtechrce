@@ -149,7 +149,7 @@ impact <- function(
 
         # Check for divergent transitions warning, if present, re-run with adjusted parameters
         warning_messages <- names(warnings())
-        divergent_transitions <- grepl('[0-9]+ divergent transitions', warning_messages)
+        divergent_transitions <- any(grepl('[0-9]+ divergent transitions', warning_messages))
 
         if (divergent_transitions) {
 
@@ -168,7 +168,7 @@ impact <- function(
 
         # Check again for divergent transitions warning, if present, stop with an error message
         warning_messages <- names(warnings())
-        divergent_transitions <- grepl('[0-9]+ divergent transitions', warning_messages)
+        divergent_transitions <- any(grepl('[0-9]+ divergent transitions', warning_messages))
 
         if (divergent_transitions) stop('Divergent transitions detected with iter = 10000 and adapt_delta = 0.9999.')
 
