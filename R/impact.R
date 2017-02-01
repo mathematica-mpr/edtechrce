@@ -293,7 +293,7 @@ impact <- function(
 
         output$results_by_grade[[grade]] <- list(
           grade = grade,
-          freq = freq_lm1,
+          freq = freq_results,
           impact = impact,
           interpretation = interpretation,
           interpretation_cutoff_0 = interpretation_cutoff_0,
