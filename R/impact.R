@@ -156,11 +156,11 @@ impact <- function(
 
           if (impact_clustered) {
 
-            bayesian_lm1 <- stanlm(impact_formula, cluster = cluster_var, data = grade_data, credible = probability / 100, iter = 10000, adapt_delta = 0.9999)
+            bayesian_lm1 <- stanlm(impact_formula, cluster = cluster_var, data = grade_data, credible = probability / 100, iter = 4000, adapt_delta = 0.9999)
 
           } else {
 
-            bayesian_lm1 <- stanlm(impact_formula, data = grade_data, credible = probability / 100, iter = 10000, adapt_delta = 0.9999)
+            bayesian_lm1 <- stanlm(impact_formula, data = grade_data, credible = probability / 100, iter = 4000, adapt_delta = 0.9999)
 
           }
         }
