@@ -168,7 +168,7 @@ impact <- function(
         # Check again for divergent transitions warning, if present, stop with an error message
         divergent_transitions <- sum(do.call(rbind, get_sampler_params(bayesian_lm1$fit, inc_warmup = FALSE))[, 'divergent__'])
 
-        if (divergent_transitions > 0) output$error_message <- 'There was a problem producing impact results (divergent transitions detected after setting iter = 10000 and adapt_delta = 0.9999), indicating there may be issues that will require a person to diagnose. Please contact a researcher for help, or contact the administrators of this website.'
+        if (divergent_transitions > 0) output$error_message <- 'There was a problem producing impact results (divergent transitions detected after setting iter = 4000 and adapt_delta = 0.9999), indicating there may be issues that will require a person to diagnose. Please contact a researcher for help, or contact the administrators of this website.'
         else {
 
           impact <- mean(bayesian_lm1$posteriorSamples$posteriorSamplesBeta[[treat_var]], na.rm=TRUE)
