@@ -117,25 +117,38 @@ impact <- function(
       n_grades <- length(grades)
       multiple_grades <- n_grades > 1
 
-      # Create impact formula
-      impact_formula_string <- sprintf('`%s` ~ %s',
-                                       outcome_var,
-                                       paste(
-                                         sprintf('`%s`', c(treat_var, control_vars)), collapse='+'))
-
-      impact_formula <- as.formula(impact_formula_string)
-
-      impact_clustered <- !is.null(cluster_var) && cluster_var %in% colnames(data)
-
-      if (impact_clustered) {
-        impact_formula_clustered <- as.formula(
-          sprintf('%s + (1 | %s)', impact_formula_string, cluster_var))
-      }
-
       for (grade_i in seq_along(grades)) {
         grade <- grades[grade_i]
 
         grade_data <- data_by_grade[[grade]]
+
+        # Check for covariates with no variation before constructing impact formula.
+        if (length(control_vars) > 0) {
+
+          covariate_variances <- sapply(
+            grade_data[, control_vars, drop=FALSE],
+            FUN = var,
+            na.rm = TRUE)
+
+          keep_index <- which(covariate_variances > 0 & !is.na(covariate_variances))
+
+          control_vars <- control_vars[keep_index]
+        }
+
+        # Create impact formula
+        impact_formula_string <- sprintf('`%s` ~ %s',
+                                         outcome_var,
+                                         paste(
+                                           sprintf('`%s`', c(treat_var, control_vars)), collapse='+'))
+
+        impact_formula <- as.formula(impact_formula_string)
+
+        impact_clustered <- !is.null(cluster_var) && cluster_var %in% colnames(data)
+
+        if (impact_clustered) {
+          impact_formula_clustered <- as.formula(
+            sprintf('%s + (1 | %s)', impact_formula_string, cluster_var))
+        }
 
         if (impact_clustered) {
 
