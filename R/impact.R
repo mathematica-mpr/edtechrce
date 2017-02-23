@@ -331,8 +331,8 @@ impact <- function(
               FUN = function(control_var, treat_var) {
 
                 treat_index <- treat_var == 1L
-                match_t <- match_var[treat_index]
-                match_c <- match_var[!treat_index]
+                match_t <- control_var[treat_index]
+                match_c <- control_var[!treat_index]
 
                 mean_t <- mean(match_t)
                 mean_c <- mean(match_c)
@@ -349,7 +349,7 @@ impact <- function(
                 effect_size <- difference / s_pooled
 
                 list(
-                  overall = mean(match_var),
+                  overall = mean(control_var),
                   intervention = mean_t,
                   comparison = mean_c,
                   difference = difference,
