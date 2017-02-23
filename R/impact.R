@@ -108,6 +108,10 @@ impact <- function(
         grade_index <- rep('All', nrow(data))
       }
 
+      # Remove missing values
+      check_vars <- intersect(c(outcome_var, treat_var, control_vars, grade_var, cluster_var), colnames(data))
+      data <- na.omit(data[, check_vars])
+
       data_by_grade <- by(
         data = data,
         INDICES = grade_index,
@@ -132,14 +136,15 @@ impact <- function(
 
           keep_index <- which(covariate_variances > 0 & !is.na(covariate_variances))
 
-          control_vars <- control_vars[keep_index]
+          control_vars_model <- control_vars[keep_index]
         }
+        else control_vars_model <- control_vars
 
         # Create impact formula
         impact_formula_string <- sprintf('`%s` ~ %s',
                                          outcome_var,
                                          paste(
-                                           sprintf('`%s`', c(treat_var, control_vars)), collapse='+'))
+                                           sprintf('`%s`', c(treat_var, control_vars_model)), collapse='+'))
 
         impact_formula <- as.formula(impact_formula_string)
 
@@ -311,8 +316,47 @@ impact <- function(
             interpretation_cutoff_0 = interpretation_cutoff_0,
             posterior_plot = base64enc::base64encode(posterior_plot),
             regression_table = regression_table,
+            samples = list(
+              n_full = nrow(grade_data),
+              n_full_treat = sum(grade_data[[treat_var]])),
             title = title,
             trace_plot = base64enc::base64encode(trace_plot))
+
+          # Control variable means
+          if (length(control_vars_model) > 0) {
+
+            output$results_by_grade[[grade]]$baseline_var_means <- lapply(
+
+              grade_data[, control_vars_model, drop=FALSE],
+              FUN = function(control_var, treat_var) {
+
+                treat_index <- treat_var == 1L
+                match_t <- match_var[treat_index]
+                match_c <- match_var[!treat_index]
+
+                mean_t <- mean(match_t)
+                mean_c <- mean(match_c)
+
+                n_t <- sum(treat_index)
+                n_c <- sum(!treat_index)
+
+                numerator <- (((n_t - 1) * var(match_t)) + ((n_c - 1) * var(match_c)))
+                denominator <- n_t + n_c - 2
+
+                s_pooled <- sqrt(numerator / denominator)
+
+                difference <- mean_t - mean_c
+                effect_size <- difference / s_pooled
+
+                list(
+                  overall = mean(match_var),
+                  intervention = mean_t,
+                  comparison = mean_c,
+                  difference = difference,
+                  effect_size = effect_size)
+              },
+              treat_var = grade_data[[treat_var]])
+          }
         }
       }
     })
