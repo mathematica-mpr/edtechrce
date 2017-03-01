@@ -82,7 +82,7 @@ matching <- function(
       missing_indices <- lapply(data[, model_vars, drop=FALSE], is.na)
       missing_index   <- Reduce(`|`, missing_indices)
 
-      data <- data[!missing_index, ]
+      data <- data[!missing_index, model_vars, drop=FALSE]
 
       # Split data by grade if grade variable is specified, otherwise fake it.
       if (!is.null(grade_var) && grade_var %in% colnames(data)) {
