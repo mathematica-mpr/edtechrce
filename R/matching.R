@@ -145,12 +145,26 @@ matching <- function(
 
         bias <- balance_table$Standardized.bias[balance_table$Matching == 'Matched']
 
-        na_bias <- is.na(bias)
+        na_bias <- is.na(bias) | is.infinite(bias)
 
-        if (any(na_bias)) dropped_vars <- match_vars[na_bias]
+        if (any(na_bias)) {
+          dropped_vars <- match_vars[na_bias]
+
+          baseline_analysis <- CheckBaseline(
+            raw.DF = data_grade,
+            matched.DF = matched_data,
+            treatment = treat_var,
+            variables = match_vars[!na_bias])
+
+          balance_table <- as.data.frame(baseline_analysis$balance.tbl)
+
+          bias <- balance_table$Standardized.bias[balance_table$Matching == 'Matched']
+
+          na_bias <- is.na(bias) | is.infinite(bias)
+        }
         else dropped_vars <- character(0)
 
-        good_balance <- all(abs(bias) <= 0.25 || is.na(bias)) && !all(na_bias)
+        good_balance <- all(abs(bias) <= 0.25 | na_bias) && !all(na_bias)
 
         if (!good_balance) {
 
@@ -207,7 +221,7 @@ matching <- function(
 
         std_bias <- abs(balance_table$Standardized.bias)
 
-        unbalanced_index <- std_bias > 0.25 & !is.na(std_bias) & balance_table$Matching == 'Matched'
+        unbalanced_index <- std_bias > 0.25 & !is.na(std_bias) & !is.infinite(std_bias) & balance_table$Matching == 'Matched'
         unbalanced_vars <- as.character(balance_table$Name[unbalanced_index])
 
         baseline_vars <- setdiff(match_vars, dropped_vars)
