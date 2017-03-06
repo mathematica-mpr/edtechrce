@@ -70,7 +70,7 @@ matching <- function(
     try_status <- try({
 
       # Add id column to data
-      data <- cbind(data, `..id..` = seq_len(nrow(data)))
+      data <- data_prematch <- cbind(data, `..id..` = seq_len(nrow(data)))
 
       match_vars <- unique(match_vars)
 
@@ -82,6 +82,8 @@ matching <- function(
       missing_indices <- lapply(data[, model_vars, drop=FALSE], is.na)
       missing_index   <- Reduce(`|`, missing_indices)
 
+      # Reduce to rows where model_vars aren't missing, and only model_vars, since matchit doesn't allow
+      # any missing values in any columns. We'll merge non-model_vars back on at the end.
       data <- data[!missing_index, model_vars, drop=FALSE]
 
       # Split data by grade if grade variable is specified, otherwise fake it.
@@ -290,15 +292,20 @@ matching <- function(
         }
 
       }
-
-      # Remove temporary id from download data.
-      output$download_data$`..id..` <- NULL
     })
 
     if ('try-error' %in% class(try_status)) {
       output$error_message <- 'There was a problem producing a matched data set, indicating there may be issues that will require a person to diagnose. Please contact a researcher for help, or contact the administrators of this website.'
     }
     else {
+      output$download_data <- merge(
+        output$download_data,
+        data_prematch[, c('..id..', setdiff(colnames(data_prematch), colnames(output$download_data)))],
+        by = '..id..')
+
+      # Remove temporary id from download data.
+      output$download_data$`..id..` <- NULL
+
       output$download_file <- sprintf('matching-%s.csv', Sys.Date())
       write.csv(output$download_data, output$download_file, row.names = FALSE)
       output$download_data <- NULL

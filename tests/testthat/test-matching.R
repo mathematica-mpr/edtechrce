@@ -44,11 +44,12 @@ test_match_character_match_var <- matching(
   treat_var = 'Treatment',
   match_vars = 'anon.student.id')
 
-matching_by_grade$`var with spaces` <- matching_by_grade$Treatment
-matching_by_grade$`1var with leading number` <- matching_by_grade$pre.test
+matching_unusual_colnames <- matching_by_grade
+matching_unusual_colnames$`var with spaces` <- matching_unusual_colnames$Treatment
+matching_unusual_colnames$`1var with leading number` <- matching_unusual_colnames$pre.test
 
 test_match_unusual_colnames <- matching(
-  data = matching_by_grade,
+  data = matching_unusual_colnames,
   treat_var = 'var with spaces',
   match_vars = '1var with leading number')
 
@@ -75,6 +76,11 @@ test_that("effect sizes are present", {
   effect_sizes <- sapply(baseline_var_means, `[[`, 'effect_size')
 
   expect_true(is.numeric(effect_sizes) & !is.na(effect_sizes))
+})
+
+test_that("all columns are returned in output data", {
+  output_data <- read.csv(test_match$download_file, header=TRUE, stringsAsFactors = FALSE)
+  expect_true(all(colnames(matching_by_grade) %in% colnames(output_data)))
 })
 
 
