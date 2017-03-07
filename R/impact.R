@@ -94,11 +94,11 @@ impact <- function(
       if (is.null(direction))   direction <- 'increase'
       if (is.null(cutoff))      cutoff <- 0
 
-      # When direction == 'decrease', the cutoff needs to be treated as negative for the posterior plots and interpretation. If the cutoff is already 0 or negative, no need to change it.
-      if (direction == 'decrease' && cutoff > 0) cutoff <- cutoff * -1
-
       cutoff <- as.numeric(cutoff)
       probability <- as.numeric(probability)
+
+      # When direction == 'decrease', the cutoff needs to be treated as negative for the posterior plots and interpretation. If the cutoff is already 0 or negative, no need to change it.
+      if (direction == 'decrease' && cutoff > 0) cutoff <- cutoff * -1
 
       # Based on email from Steve Bates 2016-12-01 at 8:19 AM, we want to set probability to 75 for the credible interval rather than allowing it to be parameterized.
       if (is.null(probability) || is.na(as.numeric(probability)) || probability != 75) probability <- 75
