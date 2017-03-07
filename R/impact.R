@@ -94,6 +94,9 @@ impact <- function(
       if (is.null(direction))   direction <- 'increase'
       if (is.null(cutoff))      cutoff <- 0
 
+      # When direction == 'decrease', the cutoff needs to be treated as negative for the posterior plots and interpretation. If the cutoff is already 0 or negative, no need to change it.
+      if (direction == 'decrease' && cutoff > 0) cutoff <- cutoff * -1
+
       cutoff <- as.numeric(cutoff)
       probability <- as.numeric(probability)
 
