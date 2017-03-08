@@ -103,6 +103,10 @@ impact <- function(
       # Based on email from Steve Bates 2016-12-01 at 8:19 AM, we want to set probability to 75 for the credible interval rather than allowing it to be parameterized.
       if (is.null(probability) || is.na(as.numeric(probability)) || probability != 75) probability <- 75
 
+      # Remove missing values
+      check_vars <- intersect(c(outcome_var, treat_var, control_vars, grade_var, cluster_var), colnames(data))
+      data <- na.omit(data[, check_vars])
+
       # Split data by grade
       if (!is.null(grade_var) && grade_var %in% colnames(data)) {
         grade_index <- data[, grade_var]
@@ -110,10 +114,6 @@ impact <- function(
       else {
         grade_index <- rep('All', nrow(data))
       }
-
-      # Remove missing values
-      check_vars <- intersect(c(outcome_var, treat_var, control_vars, grade_var, cluster_var), colnames(data))
-      data <- na.omit(data[, check_vars])
 
       data_by_grade <- by(
         data = data,
