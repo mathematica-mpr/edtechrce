@@ -344,6 +344,10 @@ impact <- function(
             },
             treat_var = grade_data[[treat_var]])
 
+          treat_index <- treat_var == 1L
+          mean_t <- mean(grade_data[[outcome_var]][treat_index], na.rm=TRUE)
+          mean_c <- mean(grade_data[[outcome_var]][!treat_index], na.rm=TRUE)
+
           output$results_by_grade[[grade]] <- list(
             baseline_var_means = baseline_var_means,
             grade = grade,
@@ -352,6 +356,9 @@ impact <- function(
             interpretation = interpretation,
             interpretation_cutoff_0 = interpretation_cutoff_0,
             posterior_plot = base64enc::base64encode(posterior_plot),
+            outcome_means = list(
+              intervention = mean_t,
+              comparison = mean_c),
             regression_table = regression_table,
             samples = list(
               n_full = nrow(grade_data),
