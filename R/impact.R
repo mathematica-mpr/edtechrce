@@ -344,7 +344,7 @@ impact <- function(
             },
             treat_var = grade_data[[treat_var]])
 
-          treat_index <- treat_var == 1L
+          treat_index <- grade_data[[treat_var]] == 1L
           mean_t <- mean(grade_data[[outcome_var]][treat_index], na.rm=TRUE)
           mean_c <- mean(grade_data[[outcome_var]][!treat_index], na.rm=TRUE)
 
