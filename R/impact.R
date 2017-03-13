@@ -311,7 +311,41 @@ impact <- function(
                                 custom.model.names = model_name,
                                 doctype = FALSE)
 
+          # Control variable means - if no control vars are specified, will return NULL (in JSON, {})
+          baseline_var_means <- lapply(
+
+            grade_data[, control_vars_model, drop=FALSE],
+            FUN = function(control_var, treat_var) {
+
+              treat_index <- treat_var == 1L
+              match_t <- control_var[treat_index]
+              match_c <- control_var[!treat_index]
+
+              mean_t <- mean(match_t)
+              mean_c <- mean(match_c)
+
+              n_t <- sum(treat_index)
+              n_c <- sum(!treat_index)
+
+              numerator <- (((n_t - 1) * var(match_t)) + ((n_c - 1) * var(match_c)))
+              denominator <- n_t + n_c - 2
+
+              s_pooled <- sqrt(numerator / denominator)
+
+              difference <- mean_t - mean_c
+              effect_size <- difference / s_pooled
+
+              list(
+                overall = mean(control_var),
+                intervention = mean_t,
+                comparison = mean_c,
+                difference = difference,
+                effect_size = effect_size)
+            },
+            treat_var = grade_data[[treat_var]])
+
           output$results_by_grade[[grade]] <- list(
+            baseline_var_means = baseline_var_means,
             grade = grade,
             freq = freq_results,
             impact = impact,
@@ -325,41 +359,6 @@ impact <- function(
             title = title,
             trace_plot = base64enc::base64encode(trace_plot))
 
-          # Control variable means
-          if (length(control_vars_model) > 0) {
-
-            output$results_by_grade[[grade]]$baseline_var_means <- lapply(
-
-              grade_data[, control_vars_model, drop=FALSE],
-              FUN = function(control_var, treat_var) {
-
-                treat_index <- treat_var == 1L
-                match_t <- control_var[treat_index]
-                match_c <- control_var[!treat_index]
-
-                mean_t <- mean(match_t)
-                mean_c <- mean(match_c)
-
-                n_t <- sum(treat_index)
-                n_c <- sum(!treat_index)
-
-                numerator <- (((n_t - 1) * var(match_t)) + ((n_c - 1) * var(match_c)))
-                denominator <- n_t + n_c - 2
-
-                s_pooled <- sqrt(numerator / denominator)
-
-                difference <- mean_t - mean_c
-                effect_size <- difference / s_pooled
-
-                list(
-                  overall = mean(control_var),
-                  intervention = mean_t,
-                  comparison = mean_c,
-                  difference = difference,
-                  effect_size = effect_size)
-              },
-              treat_var = grade_data[[treat_var]])
-          }
         }
       }
     })
