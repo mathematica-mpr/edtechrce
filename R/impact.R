@@ -345,8 +345,20 @@ impact <- function(
             treat_var = grade_data[[treat_var]])
 
           treat_index <- grade_data[[treat_var]] == 1L
+
           mean_t <- mean(grade_data[[outcome_var]][treat_index], na.rm=TRUE)
           mean_c <- mean(grade_data[[outcome_var]][!treat_index], na.rm=TRUE)
+
+          samples <- list(
+            n_full = nrow(grade_data),
+            n_full_treat = sum(grade_data[[treat_var]]))
+
+          if (impact_clustered) {
+            samples_cluster <- list(
+              n_full = length(unique(grade_data[[cluster_var]])),
+              n_full_treat = length(unique(grade_data[[cluster_var]][treat_index]))
+            )
+          } else samples_cluster <- NULL
 
           output$results_by_grade[[grade]] <- list(
             baseline_var_means = baseline_var_means,
@@ -360,9 +372,8 @@ impact <- function(
               intervention = mean_t,
               comparison = mean_c),
             regression_table = regression_table,
-            samples = list(
-              n_full = nrow(grade_data),
-              n_full_treat = sum(grade_data[[treat_var]])),
+            samples = samples,
+            samples_cluster = samples_cluster,
             title = title,
             trace_plot = base64enc::base64encode(trace_plot))
 
