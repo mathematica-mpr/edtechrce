@@ -314,35 +314,51 @@ impact <- function(
           # Control variable means - if no control vars are specified, will return NULL (in JSON, {})
           baseline_var_means <- lapply(
 
-            grade_data[, control_vars_model, drop=FALSE],
-            FUN = function(control_var, treat_var) {
+            grade_data[, control_vars, drop=FALSE],
+            FUN = function(
+              control_var,
+              treat_var,
+              control_vars_model) {
 
-              treat_index <- treat_var == 1L
-              match_t <- control_var[treat_index]
-              match_c <- control_var[!treat_index]
+              if (control_var %in% control_vars_model) {
 
-              mean_t <- mean(match_t)
-              mean_c <- mean(match_c)
+                treat_index <- treat_var == 1L
+                match_t <- control_var[treat_index]
+                match_c <- control_var[!treat_index]
 
-              n_t <- sum(treat_index)
-              n_c <- sum(!treat_index)
+                mean_t <- mean(match_t)
+                mean_c <- mean(match_c)
 
-              numerator <- (((n_t - 1) * var(match_t)) + ((n_c - 1) * var(match_c)))
-              denominator <- n_t + n_c - 2
+                n_t <- sum(treat_index)
+                n_c <- sum(!treat_index)
 
-              s_pooled <- sqrt(numerator / denominator)
+                numerator <- (((n_t - 1) * var(match_t)) + ((n_c - 1) * var(match_c)))
+                denominator <- n_t + n_c - 2
 
-              difference <- mean_t - mean_c
-              effect_size <- difference / s_pooled
+                s_pooled <- sqrt(numerator / denominator)
 
-              list(
-                overall = mean(control_var),
-                intervention = mean_t,
-                comparison = mean_c,
-                difference = difference,
-                effect_size = effect_size)
+                difference <- mean_t - mean_c
+                effect_size <- difference / s_pooled
+
+                list(
+                  overall = mean(control_var),
+                  intervention = mean_t,
+                  comparison = mean_c,
+                  difference = difference,
+                  effect_size = effect_size)
+
+              } else {
+                list(
+                  overall = NA,
+                  intervention = NA,
+                  comparison = NA,
+                  difference = NA,
+                  effect_size = NA
+                )
+              }
             },
-            treat_var = grade_data[[treat_var]])
+            treat_var = grade_data[[treat_var]],
+            control_vars_model = control_vars_model)
 
           treat_index <- grade_data[[treat_var]] == 1L
 
