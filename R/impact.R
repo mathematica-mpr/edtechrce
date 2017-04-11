@@ -312,15 +312,18 @@ impact <- function(
                                 doctype = FALSE)
 
           # Control variable means - if no control vars are specified, will return NULL (in JSON, {})
-          baseline_var_means <- lapply(
+          baseline_var_means <- lapply(control_vars,
 
-            grade_data[, control_vars, drop=FALSE],
             FUN = function(
               control_var,
               treat_var,
+              grade_data,
               control_vars_model) {
 
               if (control_var %in% control_vars_model) {
+
+                control_var <- grade_data[[control_var]]
+                treat_var   <- grade_data[[treat_var]]
 
                 treat_index <- treat_var == 1L
                 match_t <- control_var[treat_index]
@@ -357,7 +360,8 @@ impact <- function(
                 )
               }
             },
-            treat_var = grade_data[[treat_var]],
+            treat_var = treat_var,
+            grade_data = grade_data,
             control_vars_model = control_vars_model)
 
           treat_index <- grade_data[[treat_var]] == 1L
