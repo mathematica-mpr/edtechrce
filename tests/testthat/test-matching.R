@@ -53,6 +53,22 @@ test_match_unusual_colnames <- matching(
   treat_var = 'var with spaces',
   match_vars = '1var with leading number')
 
+matching_no_users <- matching_by_grade
+matching_no_users$Treatment <- 0
+
+test_match_no_users <- matching(
+  data = matching_no_users,
+  treat_var = 'Treatment',
+  match_vars = 'pre.test')
+
+matching_all_users <- matching_by_grade
+matching_all_users$Treatment <- 1
+
+test_match_all_users <- matching(
+  data = matching_all_users,
+  treat_var = 'Treatment',
+  match_vars = 'pre.test')
+
 test_that("no error message", {
   expect_null(test_match$error_message)
   expect_null(test_match_by_grade$error_message)
@@ -98,6 +114,10 @@ test_that("error_messages are correct", {
   expect_equal(test_match_missing_vars$error_message, 'One or more matching variables do not exist in the data file. Check that you did not select the blank line at the top of the matching variable selector.')
 
   expect_equal(test_match_character_match_var$error_message, 'One or more matching variables contains text values. Matching variables should only contain numeric values. Please check that the correct matching variables are selected and that the data file contains the correct values. One common issue is including text missing codes in the data. These should be changed to blank or ".".')
+
+  expect_equal(test_match_no_users$error_message, 'No treatment observations found in data. Check data and specified treatment variable.')
+
+  expect_equal(test_match_all_users$error_message, 'No comparison observations found in data. Check data and specified treatment variable.')
 })
 
 

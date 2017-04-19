@@ -54,6 +54,10 @@ matching <- function(
 
   else if (!all(data[, treat_var] %in% c(0, 1, NA))) error_message <- 'Some values of the treatment variable are not 0 or 1 (or missing). Please check that the correct variable is selected, and that the data file contains the correct value for that variable.'
 
+  else if (all(data[, treat_var] == 0L)) error_message <- 'No treatment observations found in data. Check data and specified treatment variable.'
+
+  else if (all(data[, treat_var] == 1L)) error_message <- 'No comparison observations found in data. Check data and specified treatment variable.'
+
   else if (any(sapply(data[, match_vars], class) == 'character')) error_message <- 'One or more matching variables contains text values. Matching variables should only contain numeric values. Please check that the correct matching variables are selected and that the data file contains the correct values. One common issue is including text missing codes in the data. These should be changed to blank or ".".'
 
   output <- list(
@@ -117,180 +121,184 @@ matching <- function(
         n_t <- sum(data_grade[[treat_var]] == 1)
         n_c <- sum(data_grade[[treat_var]] == 0)
 
-        # From Ignacio, if we have more treatment than comparison obs,
-        # reverse treatment indicator before matching and re-set afterwards.
-        if (n_t > n_c) data_grade[[treat_var]] <- 1 - data_grade[[treat_var]]
+        if (n_t == 0 || n_c == 0) {
+          next
+        } else {
 
-        # Try first with optimal matching
-        match_result <- matchit(
-          match_formula,
-          data = data_grade,
-          method = 'nearest',
-          ratio = 1)
+          # From Ignacio, if we have more treatment than comparison obs,
+          # reverse treatment indicator before matching and re-set afterwards.
+          if (n_t > n_c) data_grade[[treat_var]] <- 1 - data_grade[[treat_var]]
 
-        # Check for good balance - if it fails, start trying with calipers
-        matched_data <- match.data(match_result)
+          # Try first with optimal matching
+          match_result <- matchit(
+            match_formula,
+            data = data_grade,
+            method = 'nearest',
+            ratio = 1)
 
-        # If treatment groups were swapped, switch back before checking balance
-        if (n_t > n_c) {
-          data_grade[[treat_var]]   <- 1 - data_grade[[treat_var]]
-          matched_data[[treat_var]] <- 1 - matched_data[[treat_var]]
-        }
+          # Check for good balance - if it fails, start trying with calipers
+          matched_data <- match.data(match_result)
 
-        baseline_analysis <- CheckBaseline(
-          raw.DF = data_grade,
-          matched.DF = matched_data,
-          treatment = treat_var,
-          variables = match_vars)
-
-        balance_table <- as.data.frame(baseline_analysis$balance.tbl)
-
-        bias <- balance_table$Standardized.bias[balance_table$Matching == 'Matched']
-
-        na_bias <- is.na(bias) | is.infinite(bias)
-
-        if (any(na_bias)) {
-          dropped_vars <- match_vars[na_bias]
+          # If treatment groups were swapped, switch back before checking balance
+          if (n_t > n_c) {
+            data_grade[[treat_var]]   <- 1 - data_grade[[treat_var]]
+            matched_data[[treat_var]] <- 1 - matched_data[[treat_var]]
+          }
 
           baseline_analysis <- CheckBaseline(
             raw.DF = data_grade,
             matched.DF = matched_data,
             treatment = treat_var,
-            variables = match_vars[!na_bias])
+            variables = match_vars)
 
           balance_table <- as.data.frame(baseline_analysis$balance.tbl)
 
           bias <- balance_table$Standardized.bias[balance_table$Matching == 'Matched']
 
           na_bias <- is.na(bias) | is.infinite(bias)
-        }
-        else dropped_vars <- character(0)
 
-        good_balance <- all(abs(bias) <= 0.25 | na_bias) && !all(na_bias)
-
-        if (!good_balance) {
-
-          # Keep calipers as integers to avoid decimal comparisons - just divide by 100 when passing to matchit.
-          caliper <- 100
-
-          while (caliper >= 25 && !good_balance) {
-
-            # Repeat treatment group swap if necessary, since the original swap
-            # was undone for the initial balance check
-            if (n_t > n_c) data_grade[[treat_var]] <- 1 - data_grade[[treat_var]]
-
-            match_result <- matchit(
-              match_formula,
-              data = data_grade,
-              method = 'nearest',
-              caliper = caliper / 100,
-              ratio = 1)
-
-            matched_data <- match.data(match_result)
-
-            # If treatment groups were swapped, switch back before checking balance
-            if (n_t > n_c) {
-              data_grade[[treat_var]]   <- 1 - data_grade[[treat_var]]
-              matched_data[[treat_var]] <- 1 - matched_data[[treat_var]]
-            }
+          if (any(na_bias)) {
+            dropped_vars <- match_vars[na_bias]
 
             baseline_analysis <- CheckBaseline(
               raw.DF = data_grade,
               matched.DF = matched_data,
               treatment = treat_var,
-              variables = match_vars)
+              variables = match_vars[!na_bias])
 
             balance_table <- as.data.frame(baseline_analysis$balance.tbl)
 
             bias <- balance_table$Standardized.bias[balance_table$Matching == 'Matched']
 
-            na_bias <- is.na(bias)
+            na_bias <- is.na(bias) | is.infinite(bias)
+          }
+          else dropped_vars <- character(0)
 
-            if (any(na_bias)) dropped_vars <- match_vars[na_bias]
-            else dropped_vars <- character(0)
+          good_balance <- all(abs(bias) <= 0.25 | na_bias) && !all(na_bias)
 
-            good_balance <- all(abs(bias) <= 0.25 || is.na(bias)) && !all(na_bias)
+          if (!good_balance) {
 
-            caliper <- caliper - 25
+            # Keep calipers as integers to avoid decimal comparisons - just divide by 100 when passing to matchit.
+            caliper <- 100
+
+            while (caliper >= 25 && !good_balance) {
+
+              # Repeat treatment group swap if necessary, since the original swap
+              # was undone for the initial balance check
+              if (n_t > n_c) data_grade[[treat_var]] <- 1 - data_grade[[treat_var]]
+
+              match_result <- matchit(
+                match_formula,
+                data = data_grade,
+                method = 'nearest',
+                caliper = caliper / 100,
+                ratio = 1)
+
+              matched_data <- match.data(match_result)
+
+              # If treatment groups were swapped, switch back before checking balance
+              if (n_t > n_c) {
+                data_grade[[treat_var]]   <- 1 - data_grade[[treat_var]]
+                matched_data[[treat_var]] <- 1 - matched_data[[treat_var]]
+              }
+
+              baseline_analysis <- CheckBaseline(
+                raw.DF = data_grade,
+                matched.DF = matched_data,
+                treatment = treat_var,
+                variables = match_vars)
+
+              balance_table <- as.data.frame(baseline_analysis$balance.tbl)
+
+              bias <- balance_table$Standardized.bias[balance_table$Matching == 'Matched']
+
+              na_bias <- is.na(bias)
+
+              if (any(na_bias)) dropped_vars <- match_vars[na_bias]
+              else dropped_vars <- character(0)
+
+              good_balance <- all(abs(bias) <= 0.25 || is.na(bias)) && !all(na_bias)
+
+              caliper <- caliper - 25
+            }
+          }
+
+          n_full <- nrow(data_grade)
+          n_matched <- nrow(matched_data)
+
+          n_full_treat <- n_t
+          n_matched_treat <- sum(matched_data[[treat_var]]==1, na.rm=TRUE)
+
+          std_bias <- abs(balance_table$Standardized.bias)
+
+          unbalanced_index <- std_bias > 0.25 & !is.na(std_bias) & !is.infinite(std_bias) & balance_table$Matching == 'Matched'
+          unbalanced_vars <- as.character(balance_table$Name[unbalanced_index])
+
+          baseline_vars <- setdiff(match_vars, dropped_vars)
+
+          baseline_var_means <- lapply(
+            matched_data[, baseline_vars, drop=FALSE],
+            FUN = function(match_var, treat_var) {
+
+              treat_index <- treat_var == 1L
+              match_t <- match_var[treat_index]
+              match_c <- match_var[!treat_index]
+
+              mean_t <- mean(match_t)
+              mean_c <- mean(match_c)
+
+              n_t <- sum(treat_index)
+              n_c <- sum(!treat_index)
+
+              numerator <- (((n_t - 1) * var(match_t)) + ((n_c - 1) * var(match_c)))
+              denominator <- n_t + n_c - 2
+
+              s_pooled <- sqrt(numerator / denominator)
+
+              difference <- mean_t - mean_c
+              effect_size <- difference / s_pooled
+
+              list(
+                overall = mean(match_var),
+                intervention = mean_t,
+                comparison = mean_c,
+                difference = difference,
+                effect_size = effect_size)
+            },
+            treat_var = matched_data[, treat_var])
+
+          temp_plot <- tempfile()
+          png(temp_plot)
+            print(baseline_analysis$baseline.plot)
+          dev.off(which = dev.cur())
+
+          plot_encoded <- base64enc::base64encode(temp_plot)
+
+          title <- ifelse(length(grades) > 1,
+            sprintf('Grade %s', grade),
+            '')
+
+          output$results_by_grade[[grade]] <- list(
+            dropped_treatment_obs = n_full_treat - n_matched_treat,
+            dropped_vars = dropped_vars,
+            good_balance = good_balance,
+            grade = grade,
+            baseline_var_means = baseline_var_means,
+            plot = plot_encoded,
+            samples = list(
+              n_full = n_full,
+              n_matched = n_matched,
+              n_full_treat = n_full_treat,
+              n_matched_treat = n_matched_treat),
+            title = title,
+            unbalanced_vars = unbalanced_vars
+          )
+
+          # If good balance was achieved, append the matched data to the set to be downloaded.
+          if (good_balance) {
+            output$download_data <- rbind(output$download_data, matched_data)
           }
         }
-
-        n_full <- nrow(data_grade)
-        n_matched <- nrow(matched_data)
-
-        n_full_treat <- n_t
-        n_matched_treat <- sum(matched_data[[treat_var]]==1, na.rm=TRUE)
-
-        std_bias <- abs(balance_table$Standardized.bias)
-
-        unbalanced_index <- std_bias > 0.25 & !is.na(std_bias) & !is.infinite(std_bias) & balance_table$Matching == 'Matched'
-        unbalanced_vars <- as.character(balance_table$Name[unbalanced_index])
-
-        baseline_vars <- setdiff(match_vars, dropped_vars)
-
-        baseline_var_means <- lapply(
-          matched_data[, baseline_vars, drop=FALSE],
-          FUN = function(match_var, treat_var) {
-
-            treat_index <- treat_var == 1L
-            match_t <- match_var[treat_index]
-            match_c <- match_var[!treat_index]
-
-            mean_t <- mean(match_t)
-            mean_c <- mean(match_c)
-
-            n_t <- sum(treat_index)
-            n_c <- sum(!treat_index)
-
-            numerator <- (((n_t - 1) * var(match_t)) + ((n_c - 1) * var(match_c)))
-            denominator <- n_t + n_c - 2
-
-            s_pooled <- sqrt(numerator / denominator)
-
-            difference <- mean_t - mean_c
-            effect_size <- difference / s_pooled
-
-            list(
-              overall = mean(match_var),
-              intervention = mean_t,
-              comparison = mean_c,
-              difference = difference,
-              effect_size = effect_size)
-          },
-          treat_var = matched_data[, treat_var])
-
-        temp_plot <- tempfile()
-        png(temp_plot)
-          print(baseline_analysis$baseline.plot)
-        dev.off(which = dev.cur())
-
-        plot_encoded <- base64enc::base64encode(temp_plot)
-
-        title <- ifelse(length(grades) > 1,
-          sprintf('Grade %s', grade),
-          '')
-
-        output$results_by_grade[[grade]] <- list(
-          dropped_treatment_obs = n_full_treat - n_matched_treat,
-          dropped_vars = dropped_vars,
-          good_balance = good_balance,
-          grade = grade,
-          baseline_var_means = baseline_var_means,
-          plot = plot_encoded,
-          samples = list(
-            n_full = n_full,
-            n_matched = n_matched,
-            n_full_treat = n_full_treat,
-            n_matched_treat = n_matched_treat),
-          title = title,
-          unbalanced_vars = unbalanced_vars
-        )
-
-        # If good balance was achieved, append the matched data to the set to be downloaded.
-        if (good_balance) {
-          output$download_data <- rbind(output$download_data, matched_data)
-        }
-
       }
     })
 
