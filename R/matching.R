@@ -217,7 +217,7 @@ matching <- function(
               if (any(na_bias)) dropped_vars <- match_vars[na_bias]
               else dropped_vars <- character(0)
 
-              good_balance <- all(abs(bias) <= 0.25 || is.na(bias)) && !all(na_bias)
+              good_balance <- all(abs(bias) <= 0.25 | is.na(bias)) && !all(na_bias)
 
               caliper <- caliper - 25
             }
