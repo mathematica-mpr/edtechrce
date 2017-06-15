@@ -36,7 +36,7 @@ matching <- function(
 
   # Try to read data
   if (!('data.frame' %in% class(data))) {
-    data <- try(read.csv(data, header=TRUE, stringsAsFactors=FALSE))
+    data <- try(read.csv(data, header=TRUE, stringsAsFactors=FALSE, na.strings = c('NA', '', '.')))
   }
 
   # checks
@@ -58,7 +58,7 @@ matching <- function(
 
   else if (all(data[, treat_var] == 1L)) error_message <- 'No comparison observations found in data. Check data and specified treatment variable.'
 
-  else if (any(sapply(data[, match_vars], class) == 'character')) error_message <- 'One or more matching variables contains text values. Matching variables should only contain numeric values. Please check that the correct matching variables are selected and that the data file contains the correct values. One common issue is including text missing codes in the data. These should be changed to blank or ".".'
+  else if (any(sapply(data[, match_vars], class) == 'character')) error_message <- 'One or more matching variables contains text values. Matching variables should only contain numeric values. Please check that the correct matching variables are selected and that the data file contains the correct values. One common issue is including text missing codes in the data. These should be changed to blank or "NA".'
 
   output <- list(
     error_message = error_message,
