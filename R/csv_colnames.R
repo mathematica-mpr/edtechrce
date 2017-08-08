@@ -27,6 +27,91 @@ csv_colnames <- function(data) {
 
   if (is.null(error_message)) {
     output$colnames <- colnames(data)
+
+    # Identify numeric and non-numeric columns
+    column_classes <- vapply(
+      data,
+      class,
+      character(1))
+
+    numeric_index <- column_classes %in% c('numeric', 'integer', 'logical')
+
+    output$numeric_columns    <- colnames(data)[numeric_index]
+    output$nonnumeric_columns <- colnames(data)[!numeric_index]
+
+    # Check for binary variables
+    binary_index <- vapply(
+      data[numeric_index],
+      FUN = function(x) all(x %in% c(0, 1, NA)) && any(x == 0) && any(x == 1),
+      logical(1))
+
+    output$binary_columns <- output$numeric_columns[binary_index]
+
+    # Check for possible ID variables
+    id_index <- vapply(
+      data,
+      FUN = function(x) {
+
+        # values are numeric, AND
+        class(x) %in% c('numeric', 'integer') &&
+
+        # all values are 4 digits or more, AND
+        all(x >= 1000) &&
+
+        # all values are integer
+        all(x %% 1 == 0)
+
+        # OR
+        ||
+
+        # values are character, AND
+        class(x) == 'character' &&
+
+
+
+      },
+      logical(1))
+
+
+
+    # Check for possible categorical variables
+    categorical_index <- vapply(
+      data[numeric_index],
+      FUN = function(x) {
+
+        # No more than 10 distinct values, AND
+        length(unique(x)) <= 10 &&
+
+        # All values are integer, AND
+        all(x %% 1 == 0) &&
+
+        # All values are codes with three or fewer digits
+        all(x <= 999)
+      },
+      logical(1))
+
+    output$categorical_columns <- output$numeric_columns[categorical_index]
+
+    # Check for highly correlated numeric columns
+    if (sum(numeric_index) > 2) {
+
+      cor_matrix <- cor(data[numeric_index])
+
+      high_cor_index <- abs(cor_matrix) > 0.9 & upper.tri(cor_matrix)
+
+      high_cor_row_index <- row(cor_matrix)[high_cor_index]
+      high_cor_col_index <- col(cor_matrix)[high_cor_index]
+
+      high_cor_columns <- vector('list', sum(high_cor_index))
+
+      for (i in seq_along(high_cor_row_index)) {
+
+        high_cor_columns[[i]] <- c(rownames(cor_matrix)[high_cor_row_index[i]],
+                               colnames(cor_matrix)[high_cor_col_index[i]])
+      }
+    }
+
+    output$high_cor_columns <- high_cor_columns
   }
 
   return(output)

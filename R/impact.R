@@ -370,6 +370,10 @@ impact <- function(
             grade_data = grade_data,
             control_vars_model = control_vars_model)
 
+          # lapply where is.null(names(x)) returns an unnamed list. Add names for easier
+          # detection of which variable is which in baseline_var_means.
+          names(baseline_var_means) <- control_vars
+
           treat_index <- grade_data[[treat_var]] == 1L
 
           mean_t <- mean(grade_data[[outcome_var]][treat_index], na.rm=TRUE)
