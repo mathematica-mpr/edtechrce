@@ -110,8 +110,8 @@ impact <- function(
       data <- na.omit(data[, check_vars])
 
       output$outcome_range <- list(
-        min = min(data[, outcome], na.rm=TRUE),
-        max = max(data[, outcome], na.rm=TRUE))
+        min = min(data[, outcome_var], na.rm=TRUE),
+        max = max(data[, outcome_var], na.rm=TRUE))
 
       # Split data by grade
       if (!is.null(grade_var) && grade_var %in% colnames(data)) {
