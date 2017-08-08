@@ -109,6 +109,10 @@ impact <- function(
       check_vars <- intersect(c(outcome_var, treat_var, control_vars, grade_var, cluster_var), colnames(data))
       data <- na.omit(data[, check_vars])
 
+      output$outcome_range <- list(
+        min = min(data[, outcome], na.rm=TRUE),
+        max = max(data[, outcome], na.rm=TRUE))
+
       # Split data by grade
       if (!is.null(grade_var) && grade_var %in% colnames(data)) {
         grade_index <- data[, grade_var]
