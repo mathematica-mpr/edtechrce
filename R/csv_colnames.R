@@ -1,5 +1,3 @@
-
-
 #' Title
 #'
 #' @param data CSV data file input
@@ -11,6 +9,7 @@
 #' csv_colnames(matching_by_grade)
 #'
 #' @importFrom utils read.csv
+#' @importFrom jsonlite toJSON
 csv_colnames <- function(data) {
 
   require(readr)
@@ -28,68 +27,80 @@ csv_colnames <- function(data) {
   )
 
   if (is.null(error_message)) {
-    output$colnames <- colnames(data)
 
-    # Identify numeric and non-numeric columns
-    column_classes <- vapply(
-      data,
-      class,
-      character(1))
+    try_status <- try({
+      output$colnames <- colnames(data)
 
-    numeric_index <- column_classes %in% c('numeric', 'integer', 'logical')
+      # Identify numeric and non-numeric columns
+      column_classes <- vapply(
+        data,
+        class,
+        character(1))
 
-    output$numeric_columns    <- colnames(data)[numeric_index]
-    output$nonnumeric_columns <- colnames(data)[!numeric_index]
+      numeric_index <- column_classes %in% c('numeric', 'integer', 'logical')
 
-    # Check for binary variables
-    binary_index <- vapply(
-      data[numeric_index],
-      FUN = function(x) all(x %in% c(0, 1, NA)) && any(x == 0) && any(x == 1),
-      logical(1))
+      output$numeric_columns    <- colnames(data)[numeric_index]
+      output$nonnumeric_columns <- colnames(data)[!numeric_index]
 
-    output$binary_columns <- output$numeric_columns[binary_index]
+      # Check for binary variables
+      binary_index <- vapply(
+        data[numeric_index],
+        FUN = function(x) all(x %in% c(0, 1, NA)) && any(x == 0) && any(x == 1),
+        logical(1))
 
-    # Check for possible ID variables
+      output$binary_columns <- output$numeric_columns[binary_index]
 
-    # Check for possible categorical variables
-    categorical_index <- vapply(
-      data[numeric_index],
-      FUN = function(x) {
+      # Check for possible ID variables
 
-        # No more than 10 distinct values, AND
-        length(unique(x)) <= 10 &&
+      # Check for possible categorical variables
+      categorical_index <- vapply(
+        data[numeric_index],
+        FUN = function(x) {
 
-        # All values are integer, AND
-        all(x %% 1 == 0) &&
+          # No more than 10 distinct values, AND
+          length(unique(x)) <= 10 &&
 
-        # All values are codes with three or fewer digits
-        all(x <= 999)
-      },
-      logical(1))
+          # All values are integer, AND
+          all(x %% 1 == 0) &&
 
-    output$categorical_columns <- output$numeric_columns[categorical_index]
+          # All values are codes with three or fewer digits
+          all(x <= 999)
+        },
+        logical(1))
 
-    # Check for highly correlated numeric columns
-    if (sum(numeric_index) > 2) {
+      output$categorical_columns <- output$numeric_columns[categorical_index]
 
-      cor_matrix <- cor(data[numeric_index])
+      # Check for highly correlated numeric columns
+      if (sum(numeric_index) > 2) {
 
-      high_cor_index <- abs(cor_matrix) > 0.9 & upper.tri(cor_matrix)
+        cor_matrix <- cor(data[numeric_index])
 
-      high_cor_row_index <- row(cor_matrix)[high_cor_index]
-      high_cor_col_index <- col(cor_matrix)[high_cor_index]
+        high_cor_index <- abs(cor_matrix) > 0.9 & upper.tri(cor_matrix) & !is.na(cor_matrix)
 
-      high_cor_columns <- vector('list', sum(high_cor_index))
+        high_cor_row_index <- row(cor_matrix)[high_cor_index]
+        high_cor_col_index <- col(cor_matrix)[high_cor_index]
 
-      for (i in seq_along(high_cor_row_index)) {
+        high_cor_columns <- vector('list', sum(high_cor_index))
 
-        high_cor_columns[[i]] <- c(rownames(cor_matrix)[high_cor_row_index[i]],
-                               colnames(cor_matrix)[high_cor_col_index[i]])
+        for (i in seq_along(high_cor_row_index)) {
+
+          high_cor_columns[[i]] <- c(rownames(cor_matrix)[high_cor_row_index[i]],
+                                 colnames(cor_matrix)[high_cor_col_index[i]])
+        }
       }
-    }
 
-    output$high_cor_columns <- high_cor_columns
+      output$high_cor_columns <- high_cor_columns
+    })
+
+    if ('try-error' %in% class(try_status)) {
+      output$error_message <- 'There was a problem reading the data file. Please contact a researcher for help, or contact the administrators of this website.'
+    }
   }
+
+  # Be sure output can be converted to JSON by jsonlite
+  json_test <- try(toJSON(output))
+
+  if (is(json_test, 'try-error')) output <- list(error_message = 'There was a problem converting output to JSON format.')
 
   return(output)
 }
