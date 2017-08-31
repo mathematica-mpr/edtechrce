@@ -89,10 +89,17 @@ randomize <- function(
       start_time <- Sys.time()
       time_limit <- start_time + 60
 
+      if (!is.null(seed)) set.seed(seed)
+
       while (!randomize_success && !randomize_timeout) {
 
-        if (is.null(seed)) seed <- sample.int(1000:99999, size=1)
-        set.seed(seed)
+        if (is.null(seed)) {
+          iteration_seed <- as.integer(Sys.time()) + sample.int(1000:99999, size=1)
+        } else {
+          iteration_seed <- seed
+        }
+
+        set.seed(iteration_seed)
 
         # Create a dummy block_id if none was specified
         if (is.null(block_id)) {
@@ -125,7 +132,7 @@ randomize <- function(
       output$randomize_attempts <- randomize_attempts
       output$randomize_timeout  <- randomize_timeout
       output$randomize_time     <- as.integer(Sys.time() - start_time)
-      output$randomize_seed     <- seed
+      output$randomize_seed     <- iteration_seed
 
       # Re-assemble full data from randomized blocks
       randomized_data <- lapply(results_by_block, `[[`, 'data')
@@ -147,7 +154,7 @@ randomize <- function(
       output$error_message <- 'There was a problem producing random assignments for your data set, indicating there may be issues that will require a person to diagnose. Please contact a researcher for help, or contact the administrators of this website.'
     }
     else if (output$randomize_success) {
-      output$download_file <- sprintf('randomize-%s-seed-%s.csv', Sys.Date(), seed)
+      output$download_file <- sprintf('randomize-%s-seed-%s.csv', Sys.Date(), iteration_seed)
       write.csv(randomized_data, output$download_file, row.names = FALSE)
       output$download_file <- NULL
     }
@@ -222,7 +229,6 @@ randomize_block <- function(
       variables = baseline_vars)
 
     balance_table <- as.data.frame(baseline_analysis$balance.tbl)
-
     results$good_balance <- all(abs(balance_table$Standardized.bias) <= 0.25)
 
     temp_plot <- tempfile()
