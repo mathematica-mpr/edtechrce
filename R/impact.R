@@ -148,15 +148,17 @@ impact <- function(
           control_vars_model <- control_vars[keep_index]
 
           # Also check for collinearity, any other issue that would make a covariate drop out of a linear model
-          lm_formula <- sprintf('%s ~ %s', outcome_var, paste(control_vars_model, collapse=' + '))
+          if (length(control_vars_model) > 0) {
+            lm_formula <- sprintf('%s ~ %s', outcome_var, paste(control_vars_model, collapse=' + '))
 
-          lm_result <- lm(lm_formula, data = grade_data)
+            lm_result <- lm(lm_formula, data = grade_data)
 
-          na_coefficients <- is.na(lm_result$coefficients)
+            na_coefficients <- is.na(lm_result$coefficients)
 
-          if (any(na_coefficients)) {
-            keep_vars <- names(lm_result$coefficients)[!na_coefficients]
-            control_vars_model <- intersect(control_vars_model, keep_vars)
+            if (any(na_coefficients)) {
+              keep_vars <- names(lm_result$coefficients)[!na_coefficients]
+              control_vars_model <- intersect(control_vars_model, keep_vars)
+            }
           }
 
         }
