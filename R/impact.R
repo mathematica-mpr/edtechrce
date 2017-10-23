@@ -71,7 +71,7 @@ impact <- function(
 
   else if (!is.null(direction) && !(direction %in% c('increase', 'decrease'))) error_message <- 'Intended direction of the effect must be either "increase" or "decrease".'
 
-  else if (!is.null(cutoff) && is.na(as.numeric(cutoff))) error_message <- 'Cutoff value must be numeric.'
+  else if (!is.null(cutoff) && is.na(as.numeric(cutoff)) && cutoff != '') error_message <- 'Cutoff value must be numeric.'
 
   output <- list(
     error_message = error_message,
@@ -93,8 +93,8 @@ impact <- function(
       output$results_by_grade <- list()
 
       # If any of the arguments that are created in other tools were not specified, assume defaults. That's because users can use this tool outside the context of an evaluation. The impact estimates are still valid, just without context about the user's goals for success.
-      if (is.null(direction))   direction <- 'increase'
-      if (is.null(cutoff))      cutoff <- 0
+      if (is.null(direction))              direction <- 'increase'
+      if (is.null(cutoff) || cutoff == '') cutoff <- 0
 
       cutoff <- as.numeric(cutoff)
       probability <- as.numeric(probability)
