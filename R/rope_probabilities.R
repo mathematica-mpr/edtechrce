@@ -13,11 +13,11 @@
 #' @examples
 #'
 rope_probabilities <- function(model, parameter, threshold) {
-  posteriorSamples <- model$posteriorSamples$posteriorSamplesBeta[[parameter]]
+  posterior_samples <- model$posteriorSamples$posteriorSamplesBeta[[parameter]]
 
   list(
-    less_than    = apply(posteriorSamples, 2, function(x) mean(x < (-1 * abs(threshold)), na.rm=TRUE)),
-    equal        = apply(posteriorSamples, 2, function(x) mean(abs(x) < abs(threshold), na.rm=TRUE)),
-    greater_than = apply(posteriorSamples, 2, function(x) mean(x > abs(threshold), na.rm=TRUE))
+    less_than    = mean(postereior_samples < (-1 * abs(threshold)), na.rm=TRUE),
+    equal        = mean(abs(posterior_samples) < abs(threshold), na.rm=TRUE),
+    greater_than = mean(posterior_samples > abs(threshold), na.rm=TRUE)
   )
 }
