@@ -114,6 +114,10 @@ test_that("samples sizes are correct", {
   test_impact$results_by_grade
 })
 
+test_that("rope calculated correctly", {
+  expect_equal(sum(unlist(test_impact$results_by_grade[[1]]$rope_probabilities)), 1)
+})
+
 test_that("error_messages are correct", {
   expect_equal(test_impact_no_data$error_message, "The uploaded data could not be parsed as a CSV. Please check the format of the file.")
 

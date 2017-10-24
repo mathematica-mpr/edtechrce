@@ -23,4 +23,3 @@ A list containing a variance-covariance matrix, clustered standard errors and p-
 \description{
 This function allows for calculation of clustered standard errors after running a standard linear regression with lm.
 }
-

@@ -12,4 +12,3 @@ brief_pdf(html)
 \description{
 Title
 }
-

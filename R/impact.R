@@ -417,6 +417,10 @@ impact <- function(
               intervention = mean_t,
               comparison = mean_c),
             regression_table = regression_table,
+            rope_probabilities = rope_probabilities(
+              model = bayesian_lm1,
+              parameter = outcome_var,
+              threshold = cutoff),
             samples = samples,
             samples_cluster = samples_cluster,
             title = title,
