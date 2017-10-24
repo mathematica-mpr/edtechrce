@@ -16,7 +16,7 @@ rope_probabilities <- function(model, parameter, threshold) {
   posterior_samples <- model$posteriorSamples$posteriorSamplesBeta[[parameter]]
 
   list(
-    less_than    = mean(postereior_samples < (-1 * abs(threshold)), na.rm=TRUE),
+    less_than    = mean(posterior_samples < (-1 * abs(threshold)), na.rm=TRUE),
     equal        = mean(abs(posterior_samples) < abs(threshold), na.rm=TRUE),
     greater_than = mean(posterior_samples > abs(threshold), na.rm=TRUE)
   )
