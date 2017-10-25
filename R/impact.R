@@ -222,7 +222,7 @@ impact <- function(
             probability_threshold = probability)
 
           rope_bar_plot <- tempfile()
-          png(rope_bar_plot)
+          png(rope_bar_plot, width=640)
             # grid.draw is required here because the plot object is converted to
             # a gtable to allow printing text outside the plot margin
             print(grid.draw(rope_output$plots$bar))
@@ -231,7 +231,7 @@ impact <- function(
           rope_output$plots$bar <- base64enc::base64encode(rope_bar_plot)
 
           rope_dist_plot <- tempfile()
-          png(rope_dist_plot)
+          png(rope_dist_plot, width=640)
             print(grid.draw(rope_output$plots$dist))
           dev.off(which = dev.cur())
 
