@@ -2,11 +2,11 @@
 
 export(brief_pdf)
 export(csv_colnames)
+export(get_rope_output)
 export(impact)
 export(matching)
 export(randomize)
 export(randomize_block)
-export(rope_probabilities)
 importFrom(MatchIt,match.data)
 importFrom(MatchIt,matchit)
 importFrom(checkbaseline,CheckBaseline)

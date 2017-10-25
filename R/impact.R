@@ -215,6 +215,28 @@ impact <- function(
 
           impact <- mean(bayesian_lm1$posteriorSamples$posteriorSamplesBeta[[treat_var]], na.rm=TRUE)
 
+          rope_output <- get_rope_output(
+            model = bayesian_lm1,
+            parameter = treat_var,
+            rope_threshold = cutoff,
+            probability_threshold = probability)
+
+          rope_bar_plot <- tempfile()
+          png(rope_bar_plot)
+            # grid.draw is required here because the plot object is converted to
+            # a gtable to allow printing text outside the plot margin
+            print(grid.draw(rope_output$plots$bar))
+          dev.off(which = dev.cur())
+
+          rope_output$plots$bar <- base64enc::base64encode(rope_bar_plot)
+
+          rope_dist_plot <- tempfile()
+          png(rope_dist_plot)
+            print(grid.draw(rope_output$plots$dist))
+          dev.off(which = dev.cur())
+
+          rope_output$plots$dist <- base64enc::base64encode(rope_dist_plot)
+
           if (multiple_grades) title <- sprintf('Grade %s', grade)
           else title <- 'All grades combined'
 
@@ -417,10 +439,7 @@ impact <- function(
               intervention = mean_t,
               comparison = mean_c),
             regression_table = regression_table,
-            rope_probabilities = rope_probabilities(
-              model = bayesian_lm1,
-              parameter = treat_var,
-              threshold = cutoff),
+            rope_probabilities = rope_probabilities,
             samples = samples,
             samples_cluster = samples_cluster,
             title = title,
