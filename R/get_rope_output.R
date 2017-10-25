@@ -80,6 +80,7 @@ get_rope_output <- function(
       y = 'Probability') +
     theme_bw() +
     theme(
+      axis.text.x = element_text(size = 12),
       panel.grid.major.x = element_blank(),
       panel.grid.minor.x = element_blank(),
       # top, right, bottom, left margin
@@ -130,3 +131,9 @@ get_rope_output <- function(
       bar = plot_bar,
       dist = plot_dist))
 }
+
+# test <- get_rope_output(
+#   model = list(posteriorSamples =  list(posteriorSamplesBeta = data.frame(treat = rnorm(1000) * 10))),
+#   parameter = 'treat',
+#   rope_threshold = 3,
+#   probability_threshold = 75)
