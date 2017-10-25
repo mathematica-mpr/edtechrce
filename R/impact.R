@@ -439,7 +439,7 @@ impact <- function(
               intervention = mean_t,
               comparison = mean_c),
             regression_table = regression_table,
-            rope_probabilities = rope_probabilities,
+            rope_output = rope_output,
             samples = samples,
             samples_cluster = samples_cluster,
             title = title,

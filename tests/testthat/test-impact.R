@@ -116,6 +116,8 @@ test_that("samples sizes are correct", {
 
 test_that("rope calculated correctly", {
   expect_equal(sum(unlist(test_impact$results_by_grade[[1]]$rope_output$probabilities)), 1)
+  expect_type(test_impact$results_by_grade[[1]]$rope_output$plots$bar, 'character')
+  expect_type(test_impact$results_by_grade[[1]]$rope_output$plots$dist, 'character')
 })
 
 test_that("error_messages are correct", {
