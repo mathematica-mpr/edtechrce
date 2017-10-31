@@ -43,10 +43,15 @@ get_rope_output <- function(
     'The two groups\nare equivalent',
     'The treatment group\ndoes better')
 
+  colors <- list(
+    less_than    = '#FAC500',
+    equal        = '#56ACE0',
+    greater_than = '#006982')
+
   data_bar <- data.frame(
     group = factor(groups, levels = groups),
     probability = unlist(rope_probabilities) * 100,
-    color = c('#cc0000', '#3366ff', '#009933'))
+    color = unlist(colors))
 
   plot_bar <- ggplot(
     aes(
@@ -61,7 +66,7 @@ get_rope_output <- function(
     geom_hline(
       yintercept = probability_threshold,
       size = 2,
-      color = '#ffcc00') +
+      color = '#999999') +
     annotation_custom(
       grob = textGrob(
         label = sprintf('%d%%\ncertainty\nthreshold', probability_threshold)),
@@ -109,16 +114,16 @@ get_rope_output <- function(
       y = y)) +
     geom_area(
       data = d_low,
-      color = '#cc0000',
-      fill = '#cc0000') +
+      color = colors$less_than,
+      fill = colors$less_than) +
     geom_area(
       data = d_equal,
-      color = '#3366ff',
-      fill = '#3366ff') +
+      color = colors$equal,
+      fill = colors$equal) +
     geom_area(
       data = d_high,
-      color = '#009933',
-      fill = '#009933') +
+      color = colors$greater_than,
+      fill = colors$greater_than) +
     theme_bw() +
     theme(
       axis.text.y = element_blank(),
@@ -133,7 +138,7 @@ get_rope_output <- function(
 }
 
 # test <- get_rope_output(
-#   model = list(posteriorSamples =  list(posteriorSamplesBeta = data.frame(treat = rnorm(1000) * 10))),
-#   parameter = 'treat',
-#   rope_threshold = 3,
-#   probability_threshold = 75)
+#    model = list(posteriorSamples =  list(posteriorSamplesBeta = data.frame(treat = rnorm(1000) * 10))),
+#    parameter = 'treat',
+#    rope_threshold = 3,
+#    probability_threshold = 75)
