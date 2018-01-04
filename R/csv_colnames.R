@@ -71,7 +71,10 @@ csv_colnames <- function(data) {
       output$categorical_columns <- output$numeric_columns[categorical_index]
 
       # Check for highly correlated numeric columns
-      if (sum(numeric_index) > 2) {
+      if (sum(numeric_index) < 2) {
+        high_cor_columns <- character(0)
+
+      } else {
 
         cor_matrix <- cor(data[numeric_index])
 
@@ -80,12 +83,16 @@ csv_colnames <- function(data) {
         high_cor_row_index <- row(cor_matrix)[high_cor_index]
         high_cor_col_index <- col(cor_matrix)[high_cor_index]
 
-        high_cor_columns <- vector('list', sum(high_cor_index))
+        if (any(high_cor_row_index)) {
+          high_cor_columns <- vector('list', sum(high_cor_index))
 
-        for (i in seq_along(high_cor_row_index)) {
+          for (i in seq_along(high_cor_row_index)) {
 
-          high_cor_columns[[i]] <- c(rownames(cor_matrix)[high_cor_row_index[i]],
-                                 colnames(cor_matrix)[high_cor_col_index[i]])
+            high_cor_columns[[i]] <- c(rownames(cor_matrix)[high_cor_row_index[i]],
+                                   colnames(cor_matrix)[high_cor_col_index[i]])
+          }
+        } else {
+          high_cor_columns <- character(0)
         }
       }
 
