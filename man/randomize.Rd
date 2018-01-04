@@ -28,4 +28,3 @@ Title
 \examples{
 
 }
-

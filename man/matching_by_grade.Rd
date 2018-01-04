@@ -8,4 +8,3 @@
 Data.frame that includes randomly generated variables to be used in tests and examples.
 }
 \keyword{data}
-

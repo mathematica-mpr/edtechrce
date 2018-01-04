@@ -16,4 +16,3 @@ Title
 \examples{
 
 }
-
