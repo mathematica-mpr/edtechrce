@@ -49,9 +49,15 @@ get_rope_output <- function(
     greater_than = '#006982')
 
   data_bar <- data.frame(
+
     group = factor(groups, levels = groups),
     probability = unlist(rope_probabilities) * 100,
     color = unlist(colors))
+
+  # If the ROPE is 0, remove the 'equal' bar
+  if (rope_threshold == 0) {
+    data_bar <- data_bar[data_bar$group != 'The two groups\nare equivalent', ]
+  }
 
   plot_bar <- ggplot(
     aes(
@@ -115,11 +121,16 @@ get_rope_output <- function(
     geom_area(
       data = d_low,
       color = colors$less_than,
-      fill = colors$less_than) +
-    geom_area(
+      fill = colors$less_than)
+
+  if (rope_threshold != 0) {
+    plot_dist <- plot_dist + geom_area(
       data = d_equal,
       color = colors$equal,
-      fill = colors$equal) +
+      fill = colors$equal)
+  }
+
+  plot_dist <- plot_dist +
     geom_area(
       data = d_high,
       color = colors$greater_than,
@@ -142,3 +153,15 @@ get_rope_output <- function(
 #    parameter = 'treat',
 #    rope_threshold = 3,
 #    probability_threshold = 75)
+#
+# test$plots$dist
+# grid.draw(test$plots$bar)
+#
+# test <- get_rope_output(
+#    model = list(posteriorSamples =  list(posteriorSamplesBeta = data.frame(treat = rnorm(1000) * 10))),
+#    parameter = 'treat',
+#    rope_threshold = 0,
+#    probability_threshold = 95)
+#
+# test$plots$dist
+# grid.draw(test$plots$bar)
