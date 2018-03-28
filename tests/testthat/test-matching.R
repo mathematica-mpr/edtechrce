@@ -113,7 +113,7 @@ test_that("error_messages are correct", {
 
   expect_equal(test_match_missing_vars$error_message, 'One or more matching variables do not exist in the data file. Check that you did not select the blank line at the top of the matching variable selector.')
 
-  expect_equal(test_match_character_match_var$error_message, 'One or more matching variables contains text values. Matching variables should only contain numeric values. Please check that the correct matching variables are selected and that the data file contains the correct values. One common issue is including text missing codes in the data. These should be changed to blank or "NA".')
+  expect_equal(test_match_character_match_var$error_message, 'One or more matching variables contains text values. Matching variables should only contain numeric values. Please check that the correct matching variables are selected and that the data file contains the correct values. One common issue is including text missing codes in the data. These should be changed to blank or ".".')
 
   expect_equal(test_match_no_users$error_message, 'No treatment observations found in data. Check data and specified treatment variable.')
 
