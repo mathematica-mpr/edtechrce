@@ -218,7 +218,8 @@ impact <- function(
             model = bayesian_lm1,
             parameter = treat_var,
             rope_threshold = cutoff,
-            probability_threshold = probability)
+            probability_threshold = probability,
+            direction = direction)
 
           rope_bar_plot <- tempfile()
           png(rope_bar_plot, width=640)

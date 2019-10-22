@@ -4,6 +4,7 @@
 #' @param parameter The name of the treatment variable in the analysis.
 #' @param rope_threshold The cutoff threshold specified by the user.
 #' @param probability_threshold The probability threshold specified by the user.
+#' @param direction The direction of intended change ('increase' or 'decrease')
 #'
 #' @return A list containing \code{probabilities} and \code{plots}:
 #' \code{probabilities} contains three probabilities:
@@ -23,7 +24,8 @@ get_rope_output <- function(
   model,
   parameter,
   rope_threshold,
-  probability_threshold)
+  probability_threshold,
+  direction)
 {
   # First calculate ROPE probabilities:
   posterior_samples <- model$posteriorSamples$posteriorSamplesBeta[[parameter]]
@@ -47,6 +49,8 @@ get_rope_output <- function(
     less_than    = '#FAC500',
     equal        = '#56ACE0',
     greater_than = '#006982')
+
+  if (direction == 'decrease') rope_probabilities <- rev(rope_probabilities)
 
   data_bar <- data.frame(
 
@@ -148,20 +152,25 @@ get_rope_output <- function(
       dist = plot_dist))
 }
 
+# m <- list(posteriorSamples =
+#             list(posteriorSamplesBeta = data.frame(treat = rnorm(1000) * 10)))
+#
 # test <- get_rope_output(
-#    model = list(posteriorSamples =  list(posteriorSamplesBeta = data.frame(treat = rnorm(1000) * 10))),
+#    model = m,
 #    parameter = 'treat',
 #    rope_threshold = 3,
-#    probability_threshold = 75)
+#    probability_threshold = 75,
+#    direction = 'increase')
 #
 # test$plots$dist
 # grid.draw(test$plots$bar)
 #
 # test <- get_rope_output(
-#    model = list(posteriorSamples =  list(posteriorSamplesBeta = data.frame(treat = rnorm(1000) * 10))),
+#    model = m,
 #    parameter = 'treat',
 #    rope_threshold = 0,
-#    probability_threshold = 95)
+#    probability_threshold = 95,
+#    direction = 'increase')
 #
 # test$plots$dist
 # grid.draw(test$plots$bar)
