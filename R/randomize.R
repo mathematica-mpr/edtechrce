@@ -232,7 +232,7 @@ randomize_block <- function(
     results$good_balance <- all(abs(balance_table$Standardized.bias) <= 0.25)
 
     temp_plot <- tempfile()
-    png(temp_plot)
+    png(temp_plot, width = 600, height = 480)
       print(baseline_analysis$baseline.plot)
     dev.off(which = dev.cur())
 

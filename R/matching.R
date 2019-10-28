@@ -268,7 +268,7 @@ matching <- function(
             treat_var = matched_data[, treat_var])
 
           temp_plot <- tempfile()
-          png(temp_plot)
+          png(temp_plot, width = 600, height = 480)
             print(baseline_analysis$baseline.plot)
           dev.off(which = dev.cur())
 
