@@ -41,16 +41,15 @@ get_rope_output <- function(
   require(grid)
 
   groups <- c(
-    'The treatment group\ndoes worse',
-    'The two groups\nare equivalent',
-    'The treatment group\ndoes better')
+    'Outcomes\nmeaningfully\ndecreased',
+    'Outcomes\ndid not\nmeaningfully\nchange',
+    'Outcomes\nmeaningfully\nincreased'
+  )
 
   colors <- list(
     less_than    = '#FAC500',
     equal        = '#56ACE0',
     greater_than = '#006982')
-
-  if (direction == 'decrease') rope_probabilities <- rev(rope_probabilities)
 
   data_bar <- data.frame(
 
@@ -60,7 +59,7 @@ get_rope_output <- function(
 
   # If the ROPE is 0, remove the 'equal' bar
   if (rope_threshold == 0) {
-    data_bar <- data_bar[data_bar$group != 'The two groups\nare equivalent', ]
+    data_bar <- data_bar[data_bar$color != colors$equal, ]
   }
 
   plot_bar <- ggplot(
