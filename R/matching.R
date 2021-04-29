@@ -60,7 +60,7 @@ matching <- function(
 
   else if (any(sapply(data[, match_vars], class) == 'character')) error_message <- 'One or more matching variables contains text values. Matching variables should only contain numeric values. Please check that the correct matching variables are selected and that the data file contains the correct values. One common issue is including text missing codes in the data. These should be changed to blank or "NA".'
 
-  else if (!is.null(grade_var) && any(table(data[, grade_var]) < (length(treat_vars) + 2))) {
+  else if (!is.null(grade_var) && any(table(data[, grade_var]) < (length(match_vars) + 2))) {
 
     error_message <- 'There are not enough observations in the data set to conduct matching in at least one grade.'
 
