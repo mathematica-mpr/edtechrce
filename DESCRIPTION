@@ -12,7 +12,6 @@ LazyData: TRUE
 Imports:
     base64enc,
     checkbaseline,
-    easybayesian,
     jsonlite,
     lmtest,
     MatchIt,
