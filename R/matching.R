@@ -60,6 +60,16 @@ matching <- function(
 
   else if (any(sapply(data[, match_vars], class) == 'character')) error_message <- 'One or more matching variables contains text values. Matching variables should only contain numeric values. Please check that the correct matching variables are selected and that the data file contains the correct values. One common issue is including text missing codes in the data. These should be changed to blank or "NA".'
 
+  else if (!is.null(grade_var) && any(table(data[, grade_var]) < (length(treat_vars) + 2))) {
+
+    error_message <- 'There are not enough observations in the data set to conduct matching in at least one grade.'
+
+  } else if (is.null(grade_var) && (nrow(data) < length(treat_vars) + 2)) {
+
+    error_message <- 'There are not enough observations in the data set to conduct matching.'
+
+  }
+
   output <- list(
     error_message = error_message,
     args = list(
@@ -120,16 +130,6 @@ matching <- function(
 
         n_t <- sum(data_grade[[treat_var]] == 1)
         n_c <- sum(data_grade[[treat_var]] == 0)
-
-        if (nrow(data_grade) < length(treat_vars) + 2) {
-
-          output$error_message <- 'There are not enough observations to conduct matching.'
-
-          output$results_by_grade <- NULL
-
-          break
-
-        }
 
         if (n_t == 0 || n_c == 0) {
           next
@@ -315,7 +315,7 @@ matching <- function(
     if ('try-error' %in% class(try_status)) {
       output$error_message <- 'There was a problem producing a matched data set, indicating there may be issues that will require a person to diagnose. Please contact a researcher for help, or contact the administrators of this website.'
     }
-    else if (is.null(output$error_message)) {
+    else {
       output$download_data <- merge(
         output$download_data,
         data_prematch[, c('..id..', setdiff(colnames(data_prematch), colnames(output$download_data)))],
