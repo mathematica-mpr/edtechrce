@@ -64,7 +64,7 @@ matching <- function(
 
     error_message <- 'There are not enough observations in the data set to conduct matching in at least one grade.'
 
-  } else if (is.null(grade_var) && (nrow(data) < length(treat_vars) + 2)) {
+  } else if (is.null(grade_var) && (nrow(data) < length(match_vars) + 2)) {
 
     error_message <- 'There are not enough observations in the data set to conduct matching.'
 
