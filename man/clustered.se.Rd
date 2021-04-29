@@ -4,7 +4,8 @@
 \alias{clustered.se}
 \title{This function allows for calculation of clustered standard errors after running a standard linear regression with lm.}
 \usage{
-clustered.se(model_result, data, cluster, level = 0.95, Tvar = "treatment")
+clustered.se(model_result, data, cluster, level = 0.95,
+  Tvar = "treatment")
 }
 \arguments{
 \item{model_result}{Model object returned by lm}

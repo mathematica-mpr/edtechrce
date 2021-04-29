@@ -2,12 +2,13 @@
 % Please edit documentation in R/get_rope_output - Copy.R, R/get_rope_output.R
 \name{get_rope_output}
 \alias{get_rope_output}
-\alias{get_rope_output}
 \title{get_rope_output}
 \usage{
-get_rope_output(model, parameter, rope_threshold, probability_threshold)
+get_rope_output(model, parameter, rope_threshold, probability_threshold,
+  direction)
 
-get_rope_output(model, parameter, rope_threshold, probability_threshold)
+get_rope_output(model, parameter, rope_threshold, probability_threshold,
+  direction)
 }
 \arguments{
 \item{model}{The result of a call to easybayesian::stanlm}
@@ -17,6 +18,8 @@ get_rope_output(model, parameter, rope_threshold, probability_threshold)
 \item{rope_threshold}{The cutoff threshold specified by the user.}
 
 \item{probability_threshold}{The probability threshold specified by the user.}
+
+\item{direction}{The direction of intended change ('increase' or 'decrease')}
 
 \item{model}{The result of a call to easybayesian::stanlm}
 

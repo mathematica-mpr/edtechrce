@@ -121,6 +121,16 @@ matching <- function(
         n_t <- sum(data_grade[[treat_var]] == 1)
         n_c <- sum(data_grade[[treat_var]] == 0)
 
+        if (nrow(data_grade) < length(treat_vars) + 2) {
+
+          output$error_message <- 'There are not enough observations to conduct matching.'
+
+          output$results_by_grade <- NULL
+
+          break
+
+        }
+
         if (n_t == 0 || n_c == 0) {
           next
         } else {
@@ -305,7 +315,7 @@ matching <- function(
     if ('try-error' %in% class(try_status)) {
       output$error_message <- 'There was a problem producing a matched data set, indicating there may be issues that will require a person to diagnose. Please contact a researcher for help, or contact the administrators of this website.'
     }
-    else {
+    else if (is.null(output$error_message)) {
       output$download_data <- merge(
         output$download_data,
         data_prematch[, c('..id..', setdiff(colnames(data_prematch), colnames(output$download_data)))],

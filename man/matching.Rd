@@ -2,7 +2,6 @@
 % Please edit documentation in R/matching.R, R/matching_comparison.R
 \name{matching}
 \alias{matching}
-\alias{matching}
 \title{Title}
 \usage{
 matching(data = NULL, treat_var = NULL, match_vars = NULL,
