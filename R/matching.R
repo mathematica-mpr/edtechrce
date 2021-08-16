@@ -147,7 +147,7 @@ matching <- function(
             ratio = 1)
 
           # Check for good balance - if it fails, start trying with calipers
-          matched_data <- match.data(match_result)
+          matched_data <- as.data.frame(match.data(match_result))
 
           # If treatment groups were swapped, switch back before checking balance
           if (n_t > n_c) {
@@ -204,7 +204,7 @@ matching <- function(
                 caliper = caliper / 100,
                 ratio = 1)
 
-              matched_data <- match.data(match_result)
+              matched_data <- as.data.frame(match.data(match_result))
 
               # If treatment groups were swapped, switch back before checking balance
               if (n_t > n_c) {
